@@ -1,0 +1,16 @@
+{
+    frankenphp
+}
+
+:80 {
+    encode zstd br gzip
+
+    root * /app/public
+
+    php_server {
+        worker {
+            file /app/src/index.php
+            match /*
+        }
+    }
+}
