@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>短縮 URL - simple</title>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="page-header">
+        <div>
+          <h1>短縮 URL 登録</h1>
+        </div>
+      </header>
+
+      <form class="alias-form" id="alias-form">
+        <label class="field">
+          <span>URL</span>
+          <input
+            id="url"
+            name="url"
+            type="url"
+            inputmode="url"
+            autocomplete="url"
+            placeholder="https://example.com/page"
+            required
+          />
+        </label>
+
+        <label class="field">
+          <span>短縮名</span>
+          <div class="alias-row">
+            <span class="domain-prefix" id="short-url-prefix">/</span>
+            <input
+              id="alias"
+              name="alias"
+              type="text"
+              autocomplete="off"
+              pattern="[A-Za-z0-9_-]+"
+              placeholder="campaign-2026"
+              required
+            />
+          </div>
+        </label>
+
+        <button class="submit-button" type="submit">登録</button>
+      </form>
+    </main>
+
+    <dialog class="success-dialog" id="success-dialog">
+      <div class="dialog-body">
+        <p class="dialog-label">登録済み</p>
+        <h2>短縮 URL を作成しました</h2>
+        <a class="short-url" id="short-url" href="#" target="_blank" rel="noreferrer"></a>
+        <form method="dialog">
+          <button class="dialog-close" type="submit">閉じる</button>
+        </form>
+      </div>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
