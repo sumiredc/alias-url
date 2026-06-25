@@ -1,0 +1,14 @@
+version: '3'
+
+tasks:
+  fmt:
+    cmds:
+      - vendor/bin/php-cs-fixer fix
+
+  fmt:diff:
+    cmds:
+      - vendor/bin/php-cs-fixer fix --dry-run --diff --sequential
+
+  phpstan:
+    cmds:
+      - vendor/bin/phpstan analyse --debug
