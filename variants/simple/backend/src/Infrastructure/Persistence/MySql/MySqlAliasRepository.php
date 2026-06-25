@@ -2,26 +2,38 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace Alias\Simple\Infrastructure\Persistence\MySql;
 
+use Alias\Simple\Application\Port\AliasRepository;
 use PDO;
+use PDOException;
 
-final class AliasRepository
+final class MySqlAliasRepository implements AliasRepository
 {
     public function __construct(private PDO $pdo)
     {
     }
 
-    public function create(string $alias, string $url): void
+    public function create(string $alias, string $url): bool
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO aliases (alias, url) VALUES (:alias, :url)'
         );
 
-        $statement->execute([
-            'alias' => $alias,
-            'url' => $url,
-        ]);
+        try {
+            $statement->execute([
+                'alias' => $alias,
+                'url' => $url,
+            ]);
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === SqlState::INTEGRITY_CONSTRAINT_VIOLATION) {
+                return false;
+            }
+
+            throw $exception;
+        }
+
+        return true;
     }
 
     /**

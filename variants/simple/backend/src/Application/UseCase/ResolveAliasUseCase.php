@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\UseCase;
+namespace Alias\Simple\Application\UseCase;
 
-use App\Exception\AliasNotFoundException;
-use App\Repository\AliasRepository;
+use Alias\Simple\Domain\Alias\Exception\AliasNotFoundException;
+use Alias\Simple\Application\Port\AliasRepository;
 
 final class ResolveAliasUseCase
 {

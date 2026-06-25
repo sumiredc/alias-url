@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Handler;
+namespace Alias\Simple\InterfaceAdapter\Http\Handler;
 
-use App\Exception\AliasNotFoundException;
-use App\UseCase\ResolveAliasUseCase;
+use Alias\Simple\Domain\Alias\Exception\AliasNotFoundException;
+use Alias\Simple\Application\UseCase\ResolveAliasUseCase;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

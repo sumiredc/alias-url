@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Database;
+namespace Alias\Simple\Infrastructure\Persistence\MySql;
 
 final class SqlState
 {

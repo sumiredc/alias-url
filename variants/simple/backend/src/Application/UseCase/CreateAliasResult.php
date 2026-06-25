@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\UseCase;
+namespace Alias\Simple\Application\UseCase;
 
 final readonly class CreateAliasResult
 {

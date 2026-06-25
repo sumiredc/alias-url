@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Handler;
+namespace Alias\Simple\InterfaceAdapter\Http\Handler;
 
-use App\Exception\AliasAlreadyExistsException;
-use App\Exception\ValidationFailedException;
-use App\UseCase\CreateAliasUseCase;
+use Alias\Simple\Domain\Alias\Exception\AliasAlreadyExistsException;
+use Alias\Simple\Application\UseCase\ValidationFailedException;
+use Alias\Simple\Application\UseCase\CreateAliasUseCase;
 use Fig\Http\Message\StatusCodeInterface;
 use JsonException;
 use Psr\Http\Message\ResponseInterface;

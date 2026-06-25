@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Exception;
+namespace Alias\Simple\Application\UseCase;
 
 use RuntimeException;
 
@@ -11,7 +11,7 @@ final class ValidationFailedException extends RuntimeException
     /**
      * @param array<string, list<string>> $errors
      */
-    public function __construct(private array $errors)
+    public function __construct(private readonly array $errors)
     {
         parent::__construct('Validation failed.');
     }

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Alias\Simple\Application\Port\AliasRepository;
+use Alias\Simple\Infrastructure\Persistence\MySql\MySqlAliasRepository;
 use DI\ContainerBuilder;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -15,6 +17,8 @@ $env = static function (string $key, string $default): string {
 };
 
 $builder->addDefinitions([
+    AliasRepository::class => DI\autowire(MySqlAliasRepository::class),
+    MySqlAliasRepository::class => DI\autowire(),
     PDO::class => function () use ($env): PDO {
         $host = $env('DB_HOST', 'mysql');
         $port = $env('DB_PORT', '3306');

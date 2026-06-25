@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Handler\CreateHandler;
-use App\Handler\RedirectHandler;
+use Alias\Simple\InterfaceAdapter\Http\Handler\CreateHandler;
+use Alias\Simple\InterfaceAdapter\Http\Handler\RedirectHandler;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;

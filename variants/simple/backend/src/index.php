@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Middleware\CorsMiddleware;
+use Alias\Simple\InterfaceAdapter\Http\Middleware\CorsMiddleware;
 use Dotenv\Dotenv;
 use Psr\Container\ContainerInterface;
 use Slim\Factory\AppFactory;

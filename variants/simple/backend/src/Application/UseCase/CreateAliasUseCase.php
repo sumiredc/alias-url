@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\UseCase;
+namespace Alias\Simple\Application\UseCase;
 
-use App\Database\SqlState;
-use App\Exception\AliasAlreadyExistsException;
-use App\Exception\ValidationFailedException;
-use App\Repository\AliasRepository;
-use App\Validator\CreateAliasValidator;
-use PDOException;
+use Alias\Simple\Application\Port\AliasRepository;
+use Alias\Simple\Application\Validator\CreateAliasValidator;
+use Alias\Simple\Domain\Alias\Exception\AliasAlreadyExistsException;
 
 final class CreateAliasUseCase
 {
@@ -34,14 +31,8 @@ final class CreateAliasUseCase
             throw new AliasAlreadyExistsException('This short name is already used.');
         }
 
-        try {
-            $this->aliasRepository->create($alias, $url);
-        } catch (PDOException $exception) {
-            if ($exception->getCode() === SqlState::INTEGRITY_CONSTRAINT_VIOLATION) {
-                throw new AliasAlreadyExistsException('This short name is already used.', 0, $exception);
-            }
-
-            throw $exception;
+        if (!$this->aliasRepository->create($alias, $url)) {
+            throw new AliasAlreadyExistsException('This short name is already used.');
         }
 
         return new CreateAliasResult(
