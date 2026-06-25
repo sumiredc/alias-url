@@ -1,0 +1,53 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - 'variants/simple/**'
+      - 'variants/distributed/**'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'variants/simple/**'
+      - 'variants/distributed/**'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Validate Composer files
+        working-directory: variants/simple/backend
+        run: composer validate
+
+      - name: Install Composer dependencies
+        working-directory: variants/simple/backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check PHP syntax
+        working-directory: variants/simple/backend
+        run: find src -name '*.php' -print -exec php -l {} \;
+
+      - name: Check PHP formatting
+        working-directory: variants/simple/backend
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --sequential
+
+      - name: Run PHPStan
+        working-directory: variants/simple/backend
+        run: vendor/bin/phpstan analyse
