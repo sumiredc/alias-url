@@ -1,0 +1,9 @@
+{
+    "intelephense.environment.includePaths": [
+      "variants/simple/backend/.php-stubs"
+    ],
+    "[php]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+    }
+}
