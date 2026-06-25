@@ -2,49 +2,71 @@
 
 declare(strict_types=1);
 
-const WORKER_MAX_REQUESTS = 10000;
-const DEFAULT_LOCAL_FILTER_ROTATE_SECONDS = 86400;
+use Alias\Distributed\InterfaceAdapter\Http\Middleware\CorsMiddleware;
+use Dotenv\Dotenv;
+use Psr\Container\ContainerInterface;
+use Slim\Factory\AppFactory;
+use Slim\Factory\ServerRequestCreatorFactory;
+use Slim\ResponseEmitter;
 
-$handler = static function (): void {
-    $path = parse_url(requestUri(), PHP_URL_PATH);
+const DEFAULT_WORKER_MAX_REQUESTS = 100000;
 
-    if ($path === '/health') {
-        http_response_code(200);
-        header('Content-Type: application/json; charset=UTF-8');
-        echo json_encode([
-            'status' => 'ok',
-            'local_filter_rotate_seconds' => localFilterRotateSeconds(),
-        ], JSON_THROW_ON_ERROR);
+require __DIR__ . '/../vendor/autoload.php';
 
-        return;
+$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->safeLoad();
+
+/** @var ContainerInterface $container */
+$container = require __DIR__ . '/dependencies.php';
+
+AppFactory::setContainer($container);
+$app = AppFactory::create();
+
+$registerRoutes = require __DIR__ . '/routes.php';
+$registerRoutes($app);
+
+$app->addBodyParsingMiddleware();
+
+$isDebug = ($_ENV['APP_ENV'] ?? 'production') !== 'production';
+$app->addErrorMiddleware($isDebug, true, true);
+$app->add(new CorsMiddleware(corsAllowedOrigins()));
+
+$nbRequests = 0;
+$workerMaxRequests = workerMaxRequests();
+
+while (frankenphp_handle_request(function () use ($app, &$nbRequests) {
+    $nbRequests++;
+
+    $serverRequestCreator = ServerRequestCreatorFactory::create();
+    $request = $serverRequestCreator->createServerRequestFromGlobals();
+
+    $response = $app->handle($request);
+
+    $emitter = new ResponseEmitter();
+    $emitter->emit($response);
+})) {
+    if ($nbRequests >= $workerMaxRequests) {
+        break;
     }
-
-    http_response_code(501);
-    header('Content-Type: text/plain; charset=UTF-8');
-    echo 'distributed backend is not implemented yet';
-};
-
-if (!function_exists('frankenphp_handle_request')) {
-    $handler();
-
-    return;
 }
 
-for ($requestCount = 0; $requestCount < WORKER_MAX_REQUESTS; $requestCount++) {
-    frankenphp_handle_request($handler);
-}
-
-function requestUri(): string
+function workerMaxRequests(): int
 {
-    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $value = $_ENV['WORKER_MAX_REQUESTS'] ?? DEFAULT_WORKER_MAX_REQUESTS;
+    $maxRequests = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
-    return is_string($requestUri) ? $requestUri : '/';
+    return is_int($maxRequests) ? $maxRequests : DEFAULT_WORKER_MAX_REQUESTS;
 }
 
-function localFilterRotateSeconds(): int
+/**
+ * @return list<string>
+ */
+function corsAllowedOrigins(): array
 {
-    $value = $_ENV['LOCAL_FILTER_ROTATE_SECONDS'] ?? DEFAULT_LOCAL_FILTER_ROTATE_SECONDS;
-    $rotateSeconds = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    $value = $_ENV['CORS_ALLOW_ORIGIN'] ?? '*';
+    $originList = is_string($value) ? $value : '*';
+    $origins = array_map('trim', explode(',', $originList));
+    $origins = array_values(array_filter($origins, static fn (string $origin): bool => $origin !== ''));
 
-    return is_int($rotateSeconds) ? $rotateSeconds : DEFAULT_LOCAL_FILTER_ROTATE_SECONDS;
+    return $origins === [] ? ['*'] : $origins;
 }

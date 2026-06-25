@@ -3,7 +3,7 @@
 }
 
 :80 {
-    encode zstd br gzip
+    encode zstd gzip
 
     php {
         worker {

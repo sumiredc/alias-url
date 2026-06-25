@@ -1,5 +1,5 @@
 :80 {
-    encode zstd br gzip
+    encode zstd gzip
 
     reverse_proxy backend:80
 }
