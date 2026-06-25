@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use Dotenv\Dotenv;
 use App\Middleware\CorsMiddleware;
+use Dotenv\Dotenv;
 use Psr\Container\ContainerInterface;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
 use Slim\ResponseEmitter;
 
-const WORKER_MAX_REQUESTS = 10000;
+const DEFAULT_WORKER_MAX_REQUESTS = 10000;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -32,6 +32,7 @@ $app->addErrorMiddleware($isDebug, true, true);
 $app->add(new CorsMiddleware(corsAllowedOrigins()));
 
 $nbRequests = 0;
+$workerMaxRequests = workerMaxRequests();
 
 while (frankenphp_handle_request(function () use ($app, &$nbRequests) {
     $nbRequests++;
@@ -44,9 +45,17 @@ while (frankenphp_handle_request(function () use ($app, &$nbRequests) {
     $emitter = new ResponseEmitter();
     $emitter->emit($response);
 })) {
-    if ($nbRequests >= WORKER_MAX_REQUESTS) {
+    if ($nbRequests >= $workerMaxRequests) {
         break;
     }
+}
+
+function workerMaxRequests(): int
+{
+    $value = $_ENV['WORKER_MAX_REQUESTS'] ?? DEFAULT_WORKER_MAX_REQUESTS;
+    $maxRequests = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+    return is_int($maxRequests) ? $maxRequests : DEFAULT_WORKER_MAX_REQUESTS;
 }
 
 /**
