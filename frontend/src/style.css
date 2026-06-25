@@ -154,29 +154,48 @@ input:focus {
   padding: 26px;
 }
 
-.dialog-label {
-  margin: 0;
-  color: #5f6f63;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .dialog-body h2 {
   margin: 0;
   color: #142019;
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1.3;
   letter-spacing: 0;
 }
 
-.short-url {
-  display: inline-block;
-  max-width: 100%;
+.copy-field {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+}
+
+.copy-field input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
   color: #174f7a;
-  font-size: 18px;
+  font-weight: 700;
+}
+
+.copy-button {
+  display: grid;
+  min-height: 48px;
+  place-items: center;
+  border: 1px solid #cfd6cc;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+  color: #206b43;
+  background: #edf1e9;
+  font-size: 12px;
   font-weight: 800;
-  overflow-wrap: anywhere;
-  text-decoration-thickness: 2px;
+  white-space: nowrap;
+}
+
+.copy-button:hover {
+  background: #dfe8d9;
+}
+
+.copy-button svg {
+  width: 20px;
+  height: 20px;
+  fill: currentcolor;
 }
 
 .dialog-close {

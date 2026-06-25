@@ -1,15 +1,16 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>短縮 URL - simple</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Alias URL - Simple</title>
   </head>
   <body>
     <main class="shell">
       <header class="page-header">
         <div>
-          <h1>短縮 URL 登録</h1>
+          <h1>Create Alias URL</h1>
         </div>
       </header>
 
@@ -28,7 +29,7 @@
         </label>
 
         <label class="field">
-          <span>短縮名</span>
+          <span>Short name</span>
           <div class="alias-row">
             <span class="domain-prefix" id="short-url-prefix">/</span>
             <input
@@ -36,24 +37,32 @@
               name="alias"
               type="text"
               autocomplete="off"
-              pattern="[A-Za-z0-9_-]+"
+              pattern="[A-Za-z0-9_\-]+"
               placeholder="campaign-2026"
               required
             />
           </div>
         </label>
 
-        <button class="submit-button" type="submit">登録</button>
+        <button class="submit-button" type="submit">Create</button>
       </form>
     </main>
 
     <dialog class="success-dialog" id="success-dialog">
       <div class="dialog-body">
-        <p class="dialog-label">登録済み</p>
-        <h2>短縮 URL を作成しました</h2>
-        <a class="short-url" id="short-url" href="#" target="_blank" rel="noreferrer"></a>
+        <h2>Alias URL created</h2>
+        <div class="copy-field">
+          <input id="short-url" type="url" readonly />
+          <button class="copy-button" id="copy-button" type="button" aria-label="Copy alias URL">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path
+                d="M8 7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-1v1a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3h1V7Zm2 1h3a3 3 0 0 1 3 3v3h1a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v1Zm-3 2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H7Z"
+              />
+            </svg>
+          </button>
+        </div>
         <form method="dialog">
-          <button class="dialog-close" type="submit">閉じる</button>
+          <button class="dialog-close" type="submit">Close</button>
         </form>
       </div>
     </dialog>

@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  dev:
+    cmds:
+      - pnpm run dev
+
+  build:
+    cmds:
+      - pnpm run build
