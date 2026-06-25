@@ -6,6 +6,8 @@ namespace Alias\Distributed\Infrastructure\Strategy\Uniqueness;
 
 final class BloomFilter
 {
+    private const UINT32_SIZE = 4_294_967_296;
+
     private string $bits;
 
     public function __construct(
@@ -52,7 +54,7 @@ final class BloomFilter
 
         for ($index = 0; $index < $this->hashCount; $index++) {
             $hash = crc32($index . ':' . $value);
-            $unsignedHash = $hash < 0 ? $hash + 4_294_967_296 : $hash;
+            $unsignedHash = $hash < 0 ? $hash + self::UINT32_SIZE : $hash;
             $positions[] = $unsignedHash % $this->sizeBits;
         }
 

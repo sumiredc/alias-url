@@ -33,6 +33,41 @@ final class RedisAliasRepository implements AliasRepository
         return $result === 'OK';
     }
 
+    /**
+     * @return array{alias: string, url: string, created_at: string}|null
+     *
+     * @throws JsonException
+     */
+    public function findByAlias(string $alias): ?array
+    {
+        $shard = $this->shardResolver->resolve($alias);
+        $client = $this->clientProvider->clientFor($shard);
+        $payload = $client->executeRaw(['GET', $this->key($alias)]);
+
+        if (!is_string($payload) || $payload === '') {
+            return null;
+        }
+
+        $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
+
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $url = $decoded['url'] ?? null;
+        $createdAt = $decoded['created_at'] ?? null;
+
+        if (!is_string($url) || !is_string($createdAt)) {
+            return null;
+        }
+
+        return [
+            'alias' => $alias,
+            'url' => $url,
+            'created_at' => $createdAt,
+        ];
+    }
+
     private function key(string $alias): string
     {
         return sprintf('alias:%s', $alias);

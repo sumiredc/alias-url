@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Alias\Distributed\InterfaceAdapter\Http\Handler\CreateHandler;
+use Alias\Distributed\InterfaceAdapter\Http\Handler\RedirectHandler;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,4 +19,5 @@ return function (App $app): void {
     });
 
     $app->post('/api/aliases', CreateHandler::class);
+    $app->get('/{alias:[A-Za-z0-9_-]+}', RedirectHandler::class);
 };
