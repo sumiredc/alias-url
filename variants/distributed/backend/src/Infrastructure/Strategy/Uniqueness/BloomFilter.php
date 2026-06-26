@@ -40,11 +40,6 @@ final class BloomFilter
         return true;
     }
 
-    public function reset(): void
-    {
-        $this->bits = str_repeat("\0", strlen($this->bits));
-    }
-
     /**
      * @return list<int>
      */

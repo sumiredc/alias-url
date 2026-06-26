@@ -13,19 +13,13 @@ final class LocalAliasUniquenessGuard implements AliasUniquenessGuard
      */
     private array $exactAliases = [];
 
-    private int $nextRotateAt;
-
     public function __construct(
         private BloomFilter $bloomFilter,
-        private readonly int $rotateSeconds,
     ) {
-        $this->nextRotateAt = time() + $this->rotateSeconds;
     }
 
     public function mightContain(string $alias): bool
     {
-        $this->rotateIfNeeded();
-
         if (strlen($alias) === 1) {
             return isset($this->exactAliases[$alias]);
         }
@@ -35,8 +29,6 @@ final class LocalAliasUniquenessGuard implements AliasUniquenessGuard
 
     public function add(string $alias): void
     {
-        $this->rotateIfNeeded();
-
         if (strlen($alias) === 1) {
             $this->exactAliases[$alias] = true;
 
@@ -44,17 +36,5 @@ final class LocalAliasUniquenessGuard implements AliasUniquenessGuard
         }
 
         $this->bloomFilter->add($alias);
-    }
-
-    private function rotateIfNeeded(): void
-    {
-        $now = time();
-
-        if ($now < $this->nextRotateAt) {
-            return;
-        }
-
-        $this->bloomFilter->reset();
-        $this->nextRotateAt = $now + $this->rotateSeconds;
     }
 }

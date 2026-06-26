@@ -12,3 +12,7 @@ tasks:
   phpstan:
     cmds:
       - vendor/bin/phpstan analyse --debug
+
+  test:
+    cmds:
+      - vendor/bin/pest

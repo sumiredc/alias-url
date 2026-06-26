@@ -53,8 +53,7 @@ $builder->addDefinitions([
             new BloomFilter(
                 sizeBits: $envInt('LOCAL_BLOOM_FILTER_BITS', 10_000_000),
                 hashCount: $envInt('LOCAL_BLOOM_FILTER_HASHES', 7),
-            ),
-            rotateSeconds: $envInt('LOCAL_FILTER_ROTATE_SECONDS', 86400),
+            )
         );
     },
     AliasRepository::class => DI\autowire(RedisAliasRepository::class),
