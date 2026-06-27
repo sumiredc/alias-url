@@ -1,0 +1,32 @@
+version: '3'
+
+includes:
+  frontend:
+    taskfile: ./frontend/Taskfile.yml
+    dir: ./frontend
+
+  simple:
+    taskfile: ./variants/simple/Taskfile.yml
+    dir: ./variants/simple
+
+  simple-backend:
+    taskfile: ./variants/simple/backend/Taskfile.yml
+    dir: ./variants/simple/backend
+
+  distributed:
+    taskfile: ./variants/distributed/Taskfile.yml
+    dir: ./variants/distributed
+
+  distributed-backend:
+    taskfile: ./variants/distributed/backend/Taskfile.yml
+    dir: ./variants/distributed/backend
+
+  bench:
+    taskfile: ./bench/Taskfile.yml
+    dir: .
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+    silent: true

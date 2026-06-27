@@ -1,0 +1,515 @@
+version: '3'
+
+tasks:
+  compare:
+    desc: Compare the latest simple and distributed k6 benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs
+
+  compare:direct:create:
+    desc: Compare latest direct create benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple-direct --distributed-variant=distributed-direct --scenarios=create-existing,create
+
+  compare:direct:redirect:
+    desc: Compare latest direct redirect benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple-direct --distributed-variant=distributed-redirect-direct --scenarios=redirect
+
+  compare:scaled:
+    desc: Compare the latest scaled simple and distributed k6 benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple-scaled --distributed-variant=distributed-scaled
+
+  simple:
+    desc: Run the full k6 benchmark flow against the simple variant with nginx gateway
+    cmds:
+      - task distributed:down
+      - task simple:up
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple:scaled:
+    desc: Run the full k6 benchmark flow against the simple variant with scaled backend
+    cmds:
+      - task distributed:down
+      - task simple:down
+      - task simple:up:scaled
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-scaled-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-scaled/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-scaled"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple:caddy:
+    desc: Run the full k6 benchmark flow against the simple variant with Caddy gateway
+    cmds:
+      - task distributed:down
+      - task simple:down
+      - task simple:up:caddy
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-caddy-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-caddy/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-caddy"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple:direct:
+    desc: Run the full k6 benchmark flow against simple backend directly, without gateway
+    cmds:
+      - task distributed:down
+      - task simple:down
+      - task simple:up:direct
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-direct-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-direct/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-direct"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  distributed:
+    desc: Run the full k6 benchmark flow against the distributed variant with nginx gateway
+    cmds:
+      - task simple:down
+      - task distributed:up
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-distributed-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/distributed/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=distributed"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  distributed:scaled:
+    desc: Run the full k6 benchmark flow against the distributed variant with scaled backends
+    cmds:
+      - task simple:down
+      - task distributed:down
+      - task distributed:up:scaled
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-distributed-scaled-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/distributed-scaled/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=distributed-scaled"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  distributed:direct:
+    desc: Run distributed create benchmarks against the backend directly, without gateway
+    cmds:
+      - task simple:down
+      - task distributed:down
+      - task distributed:up:direct
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-distributed-direct-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/distributed-direct/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=distributed-direct"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  distributed:redirect:direct:
+    desc: Run distributed redirect benchmarks against backend-redirect directly, without gateway
+    cmds:
+      - task simple:down
+      - task distributed:down
+      - task distributed:up:redirect:direct
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-distributed-redirect-direct-$(date +%Y%m%d%H%M%S)}"
+        SEED_BASE_URL="${SEED_BASE_URL:-http://localhost:8081}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/distributed-redirect-direct/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=distributed-redirect-direct"
+        echo "run_id=${RUN_ID}"
+        echo "seed_base_url=${SEED_BASE_URL}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${SEED_BASE_URL}/health" >/dev/null && curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backends did not become healthy: seed=${SEED_BASE_URL}/health redirect=${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${SEED_BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        echo "results=${RESULT_DIR}"
+
+  distributed:caddy:
+    desc: Run the full k6 benchmark flow against the distributed variant with Caddy gateway
+    cmds:
+      - task simple:down
+      - task distributed:down
+      - task distributed:up:caddy
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-distributed-caddy-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/distributed-caddy/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=distributed-caddy"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/seed-aliases.json" \
+          bench/k6/setup/seed-aliases.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
