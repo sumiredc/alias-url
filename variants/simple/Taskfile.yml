@@ -5,9 +5,21 @@ tasks:
     cmds:
       - docker compose -f compose.yaml up -d --build
 
+  up:caddy:
+    cmds:
+      - docker compose -f compose.yaml -f compose.caddy.yaml up -d --build
+
+  up:scaled:
+    cmds:
+      - docker compose -f compose.yaml up -d --build --scale backend=3
+
+  up:direct:
+    cmds:
+      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend mysql
+
   down:
     cmds:
-      - docker compose -f compose.yaml down
+      - docker compose -f compose.yaml down -v
 
   logs:
     cmds:
