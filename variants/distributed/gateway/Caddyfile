@@ -1,5 +1,33 @@
 :80 {
     encode zstd gzip
 
-    reverse_proxy backend:80
+    handle /api/* {
+        reverse_proxy backend:80 {
+            transport http {
+                keepalive 2m
+                keepalive_idle_conns 512
+                keepalive_idle_conns_per_host 256
+            }
+        }
+    }
+
+    handle /health {
+        reverse_proxy backend:80 {
+            transport http {
+                keepalive 2m
+                keepalive_idle_conns 512
+                keepalive_idle_conns_per_host 256
+            }
+        }
+    }
+
+    handle {
+        reverse_proxy backend-redirect:80 {
+            transport http {
+                keepalive 2m
+                keepalive_idle_conns 512
+                keepalive_idle_conns_per_host 256
+            }
+        }
+    }
 }

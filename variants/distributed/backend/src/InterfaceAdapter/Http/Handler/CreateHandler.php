@@ -48,7 +48,11 @@ final class CreateHandler
                 'errors' => $exception->errors(),
             ], StatusCodeInterface::STATUS_BAD_REQUEST);
         } catch (AliasAlreadyExistsException $exception) {
-            return $this->json($response, ['message' => $exception->getMessage()], StatusCodeInterface::STATUS_CONFLICT);
+            return $this->json($response, [
+                'message' => $exception->getMessage(),
+                'reason' => $exception->reason(),
+                'rejectedByUniquenessGuard' => $exception->reason() === AliasAlreadyExistsException::REASON_ALIAS_MIGHT_EXIST,
+            ], StatusCodeInterface::STATUS_CONFLICT);
         }
 
         return $this->json($response, [

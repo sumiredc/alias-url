@@ -30,13 +30,19 @@ final class CreateAliasUseCase
         }
 
         if ($this->aliasUniquenessGuard->mightContain($alias)) {
-            throw new AliasAlreadyExistsException('This short name is already used.');
+            throw new AliasAlreadyExistsException(
+                'This short name might already be used.',
+                AliasAlreadyExistsException::REASON_ALIAS_MIGHT_EXIST,
+            );
         }
 
         if (!$this->aliasRepository->create($alias, $url)) {
             $this->aliasUniquenessGuard->add($alias);
 
-            throw new AliasAlreadyExistsException('This short name is already used.');
+            throw new AliasAlreadyExistsException(
+                'This short name is already used.',
+                AliasAlreadyExistsException::REASON_ALIAS_EXISTS,
+            );
         }
 
         $this->aliasUniquenessGuard->add($alias);

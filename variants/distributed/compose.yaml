@@ -1,16 +1,36 @@
 services:
   gateway:
-    image: caddy:2.11-alpine
+    image: nginx:1.27-alpine
     ports:
       - "8080:80"
     volumes:
-      - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
+      - backend-redirect
 
   backend:
     build:
       context: ./backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    env_file:
+      - path: backend/.env.example
+      - path: backend/.env
+        required: false
+    depends_on:
+      redis-1:
+        condition: service_healthy
+      redis-2:
+        condition: service_healthy
+      redis-3:
+        condition: service_healthy
+
+  backend-redirect:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.redirect
     working_dir: /app
     volumes:
       - ./backend:/app

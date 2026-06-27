@@ -3,14 +3,13 @@
 declare(strict_types=1);
 
 use Alias\Distributed\InterfaceAdapter\Http\Handler\CreateHandler;
-use Alias\Distributed\InterfaceAdapter\Http\Handler\RedirectHandler;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;
 
 return function (App $app): void {
-    $app->get('/health', static function (ServerRequestInterface $_request, ResponseInterface $response): ResponseInterface {
+    $app->get('/health', function (ServerRequestInterface $_request, ResponseInterface $response): ResponseInterface {
         $response->getBody()->write(json_encode(['status' => 'ok'], JSON_THROW_ON_ERROR));
 
         return $response
@@ -19,5 +18,4 @@ return function (App $app): void {
     });
 
     $app->post('/api/aliases', CreateHandler::class);
-    $app->get('/{alias:[A-Za-z0-9_-]+}', RedirectHandler::class);
 };

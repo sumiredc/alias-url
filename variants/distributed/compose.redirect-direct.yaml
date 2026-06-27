@@ -1,0 +1,8 @@
+services:
+  backend:
+    ports:
+      - "8081:80"
+
+  backend-redirect:
+    ports:
+      - "8080:80"

@@ -5,13 +5,25 @@ tasks:
     cmds:
       - docker compose -f compose.yaml up -d --build
 
+  up:caddy:
+    cmds:
+      - docker compose -f compose.yaml -f compose.caddy.yaml up -d --build
+
   up:scaled:
     cmds:
-      - docker compose -f compose.yaml up -d --build --scale backend=3
+      - COMPOSE_PARALLEL_LIMIT=1 docker compose -f compose.yaml up -d --build --scale backend=3 --scale backend-redirect=3
+
+  up:direct:
+    cmds:
+      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend redis-1 redis-2 redis-3
+
+  up:redirect:direct:
+    cmds:
+      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect redis-1 redis-2 redis-3
 
   down:
     cmds:
-      - docker compose -f compose.yaml down
+      - docker compose -f compose.yaml down -v
 
   logs:
     cmds:
