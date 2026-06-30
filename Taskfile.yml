@@ -13,6 +13,14 @@ includes:
     taskfile: ./variants/simple/backend/Taskfile.yml
     dir: ./variants/simple/backend
 
+  simple-rs:
+    taskfile: ./variants/simple-rs/Taskfile.yml
+    dir: ./variants/simple-rs
+
+  simple-rs-backend:
+    taskfile: ./variants/simple-rs/backend/Taskfile.yml
+    dir: ./variants/simple-rs/backend
+
   distributed:
     taskfile: ./variants/distributed/Taskfile.yml
     dir: ./variants/distributed
@@ -30,3 +38,10 @@ tasks:
     cmds:
       - task --list-all
     silent: true
+
+  down:all:
+    desc: Stop all local backend variants and remove their volumes
+    cmds:
+      - task simple:down
+      - task simple-rs:down
+      - task distributed:down

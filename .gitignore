@@ -3,3 +3,6 @@ vendor/
 .php-cs-fixer.cache
 .phpunit.cache/
 bench/results/
+bench/seed-data/
+target/
+variants/simple-rs/backend/target/
