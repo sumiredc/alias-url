@@ -1,6 +1,6 @@
 import http from 'k6/http';
 import { config, jsonHeaders } from '../lib/config.ts';
-import { aliasFor, targetUrl } from '../lib/aliases.ts';
+import { seedAliasFor, targetUrl } from '../lib/aliases.ts';
 import { checkStatusOneOf } from '../lib/checks.ts';
 import { recordConflictReason, recordStatus } from '../lib/status-metrics.ts';
 
@@ -14,7 +14,7 @@ http.setResponseCallback(http.expectedStatuses({ min: 200, max: 399 }, 409));
 export const options = {
   vus: 1,
   iterations: cfg.seedCount,
-  summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
+  summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
   thresholds: {
     checks: ['rate>0.99'],
     http_req_duration: ['p(95)<500', 'p(99)<1000'],
@@ -22,7 +22,7 @@ export const options = {
 };
 
 export default function (): void {
-  const alias = aliasFor(cfg, 'seed', __ITER);
+  const alias = seedAliasFor(cfg, __ITER);
   const response = http.post(
     `${cfg.baseUrl}/api/aliases`,
     JSON.stringify({

@@ -11,25 +11,34 @@ const args = parseArgs(process.argv.slice(2));
 const scenarios = args.scenarios ?? defaultScenarios;
 const simpleVariant = args.simpleVariant ?? 'simple';
 const distributedVariant = args.distributedVariant ?? 'distributed';
-const simpleRun = args.simple ?? latestRunDir(simpleVariant);
-const distributedRun = args.distributed ?? latestRunDir(distributedVariant);
+const variants = (args.variants ?? [
+  { name: simpleVariant, runDir: args.simple },
+  { name: distributedVariant, runDir: args.distributed },
+]).map((variant) => ({
+  ...variant,
+  runDir: variant.runDir ?? latestRunDir(variant.name, scenarios),
+}));
 
-if (!simpleRun || !distributedRun) {
-  console.error('Could not find both simple and distributed result directories.');
-  console.error(`simple variant: ${simpleVariant}`);
-  console.error(`distributed variant: ${distributedVariant}`);
+const missingVariants = variants.filter((variant) => !variant.runDir);
+
+if (missingVariants.length > 0) {
+  console.error('Could not find all result directories.');
+  console.error(`missing variants: ${missingVariants.map((variant) => variant.name).join(', ')}`);
   process.exit(1);
 }
 
 const rows = [];
 
 for (const scenario of scenarios) {
-  rows.push(summaryRow(simpleVariant, simpleRun, scenario));
-  rows.push(summaryRow(distributedVariant, distributedRun, scenario));
+  for (const variant of variants) {
+    rows.push(summaryRow(variant.name, variant.runDir, scenario));
+  }
 }
 
-console.log(`simple:      ${displayPath(simpleRun)}`);
-console.log(`distributed: ${displayPath(distributedRun)}`);
+const labelWidth = Math.max(...variants.map((variant) => variant.name.length));
+for (const variant of variants) {
+  console.log(`${variant.name.padEnd(labelWidth)}: ${displayPath(variant.runDir)}`);
+}
 console.log('');
 printTable(rows);
 
@@ -58,12 +67,20 @@ function parseArgs(argv) {
     if (key === '--scenarios' && value) {
       parsed.scenarios = value.split(',').map((scenario) => scenario.trim()).filter(Boolean);
     }
+
+    if (key === '--variants' && value) {
+      parsed.variants = value
+        .split(',')
+        .map((variant) => variant.trim())
+        .filter(Boolean)
+        .map((variant) => ({ name: variant, runDir: null }));
+    }
   }
 
   return parsed;
 }
 
-function latestRunDir(variant) {
+function latestRunDir(variant, requiredScenarios) {
   const variantDir = path.join(resultRoot, variant);
 
   if (!fs.existsSync(variantDir)) {
@@ -73,9 +90,27 @@ function latestRunDir(variant) {
   const entries = fs.readdirSync(variantDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => path.join(variantDir, entry.name))
-    .sort();
+    .filter((runDir) => hasScenarioSummaries(runDir, requiredScenarios))
+    .map((runDir) => ({ runDir, mtime: latestSummaryMtime(runDir, requiredScenarios) }))
+    .sort((left, right) => {
+      if (left.mtime !== right.mtime) {
+        return left.mtime - right.mtime;
+      }
 
-  return entries.at(-1) ?? null;
+      return left.runDir.localeCompare(right.runDir);
+    });
+
+  return entries.at(-1)?.runDir ?? null;
+}
+
+function hasScenarioSummaries(runDir, requiredScenarios) {
+  return requiredScenarios.every((scenario) => fs.existsSync(path.join(runDir, `${scenario}.json`)));
+}
+
+function latestSummaryMtime(runDir, requiredScenarios) {
+  return Math.max(
+    ...requiredScenarios.map((scenario) => fs.statSync(path.join(runDir, `${scenario}.json`)).mtimeMs),
+  );
 }
 
 function summaryRow(variant, runDir, scenario) {
@@ -91,6 +126,7 @@ function summaryRow(variant, runDir, scenario) {
       med: '-',
       p95: '-',
       p99: '-',
+      p999: '-',
       max: '-',
       failed: '-',
       checks: '-',
@@ -116,6 +152,7 @@ function summaryRow(variant, runDir, scenario) {
     med: msOrDash(duration.med),
     p95: msOrDash(duration['p(95)']),
     p99: msOrDash(duration['p(99)']),
+    p999: msOrDash(duration['p(99.9)']),
     max: msOrDash(duration.max),
     failed: percentOrDash(failed.value),
     checks: checks.value === undefined
@@ -127,17 +164,18 @@ function summaryRow(variant, runDir, scenario) {
 }
 
 function printTable(rows) {
-  const headers = ['scenario', 'variant', 'vus', 'reqs', 'rps', 'med', 'p95', 'p99', 'max', 'failed', 'checks', 'statuses', 'conflicts'];
+  const headers = ['scenario', 'variant', 'vus', 'reqs', 'rps', 'med', 'p95', 'p99', 'p99.9', 'max', 'failed', 'checks', 'statuses', 'conflicts'];
+  const displayValue = (row, header) => String(row[header === 'p99.9' ? 'p999' : header]);
   const widths = Object.fromEntries(headers.map((header) => [
     header,
-    Math.max(header.length, ...rows.map((row) => String(row[header]).length)),
+    Math.max(header.length, ...rows.map((row) => displayValue(row, header).length)),
   ]));
 
   console.log(headers.map((header) => pad(header, widths[header])).join('  '));
   console.log(headers.map((header) => '-'.repeat(widths[header])).join('  '));
 
   for (const row of rows) {
-    console.log(headers.map((header) => pad(String(row[header]), widths[header])).join('  '));
+    console.log(headers.map((header) => pad(displayValue(row, header), widths[header])).join('  '));
   }
 }
 

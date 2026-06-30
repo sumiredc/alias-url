@@ -1,10 +1,122 @@
 version: '3'
 
 tasks:
+  down:
+    desc: Stop all benchmark variants and remove their volumes
+    cmds:
+      - task simple:down
+      - task simple-rs:down
+      - task distributed:down
+
+  all:
+    desc: Run simple, simple-rs, distributed benchmarks, then compare all
+    cmds:
+      - task bench:simple
+      - task bench:simple-rs
+      - task bench:distributed
+      - task bench:compare:all
+
+  all:medium:
+    desc: Run all standard benchmarks with the medium bulk-seeded dataset
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-all-medium-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=medium RUN_ID="${RUN_ID}" task bench:all
+
+  all:large:
+    desc: Run all standard benchmarks with the large bulk-seeded dataset
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-all-large-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=large RUN_ID="${RUN_ID}" task bench:all
+
+  all:scaled:
+    desc: Run scaled simple, simple-rs, distributed benchmarks, then compare all
+    cmds:
+      - task bench:simple:scaled
+      - task bench:simple-rs:scaled
+      - task bench:distributed:scaled
+      - task bench:compare:scaled:all
+
+  all:medium:scaled:
+    desc: Run all scaled benchmarks with the medium bulk-seeded dataset
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-all-medium-scaled-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=medium RUN_ID="${RUN_ID}" task bench:all:scaled
+
+  all:large:scaled:
+    desc: Run all scaled benchmarks with the large bulk-seeded dataset
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-all-large-scaled-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=large RUN_ID="${RUN_ID}" task bench:all:scaled
+
+  redirect:direct:simple-rs:
+    desc: Run direct redirect benchmarks for simple-rs and distributed, then compare
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-redirect-direct-simple-rs-$(date +%Y%m%d%H%M%S)}"
+        RUN_ID="${RUN_ID}" task bench:simple-rs:redirect:direct
+        RUN_ID="${RUN_ID}" task bench:distributed:redirect:direct
+        task bench:compare:direct:redirect:simple-rs
+
+  redirect:direct:simple-rs:medium:
+    desc: Run direct redirect benchmarks for simple-rs and distributed with medium seed data
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-redirect-direct-simple-rs-medium-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=medium RUN_ID="${RUN_ID}" task bench:redirect:direct:simple-rs
+
+  redirect:direct:simple-rs:large:
+    desc: Run direct redirect benchmarks for simple-rs and distributed with large seed data
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-redirect-direct-simple-rs-large-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=large RUN_ID="${RUN_ID}" task bench:redirect:direct:simple-rs
+
+  redirect:scaled:simple-rs:
+    desc: Run scaled redirect benchmarks for simple-rs and distributed, then compare
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-redirect-scaled-simple-rs-$(date +%Y%m%d%H%M%S)}"
+        RUN_ID="${RUN_ID}" task bench:simple-rs:redirect:scaled
+        RUN_ID="${RUN_ID}" task bench:distributed:redirect:scaled
+        task bench:compare:redirect:scaled:simple-rs
+
+  redirect:scaled:simple-rs:medium:
+    desc: Run scaled redirect benchmarks for simple-rs and distributed with medium seed data
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-redirect-scaled-simple-rs-medium-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=medium RUN_ID="${RUN_ID}" task bench:redirect:scaled:simple-rs
+
+  redirect:scaled:simple-rs:large:
+    desc: Run scaled redirect benchmarks for simple-rs and distributed with large seed data
+    cmds:
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-redirect-scaled-simple-rs-large-$(date +%Y%m%d%H%M%S)}"
+        SEED_PROFILE=large RUN_ID="${RUN_ID}" task bench:redirect:scaled:simple-rs
+
   compare:
     desc: Compare the latest simple and distributed k6 benchmark results
     cmds:
       - node bench/scripts/compare-results.mjs
+
+  compare:all:
+    desc: Compare the latest simple, simple-rs, and distributed k6 benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --variants=simple,simple-rs,distributed
 
   compare:direct:create:
     desc: Compare latest direct create benchmark results
@@ -16,15 +128,45 @@ tasks:
     cmds:
       - node bench/scripts/compare-results.mjs --simple-variant=simple-direct --distributed-variant=distributed-redirect-direct --scenarios=redirect
 
+  compare:direct:redirect:simple-rs:
+    desc: Compare latest direct redirect benchmark results between simple-rs and distributed
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple-rs-direct --distributed-variant=distributed-redirect-direct --scenarios=redirect
+
+  compare:redirect:scaled:simple-rs:
+    desc: Compare latest scaled redirect benchmark results between simple-rs and distributed
+    cmds:
+      - node bench/scripts/compare-results.mjs --variants=simple-rs-redirect-scaled,distributed-redirect-scaled --scenarios=redirect
+
   compare:scaled:
     desc: Compare the latest scaled simple and distributed k6 benchmark results
     cmds:
       - node bench/scripts/compare-results.mjs --simple-variant=simple-scaled --distributed-variant=distributed-scaled
 
+  compare:scaled:all:
+    desc: Compare the latest scaled simple, simple-rs, and distributed k6 benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --variants=simple-scaled,simple-rs-scaled,distributed-scaled
+
+  compare:simple-rs:
+    desc: Compare the latest simple PHP and simple Rust benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple --distributed-variant=simple-rs
+
+  compare:simple-rs:direct:
+    desc: Compare the latest direct simple PHP and simple Rust benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple-direct --distributed-variant=simple-rs-direct
+
+  compare:simple-rs:scaled:
+    desc: Compare the latest scaled simple PHP and simple Rust benchmark results
+    cmds:
+      - node bench/scripts/compare-results.mjs --simple-variant=simple-scaled --distributed-variant=simple-rs-scaled
+
   simple:
     desc: Run the full k6 benchmark flow against the simple variant with nginx gateway
     cmds:
-      - task distributed:down
+      - task bench:down
       - task simple:up
       - |
         set -eu
@@ -51,9 +193,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -80,8 +225,7 @@ tasks:
   simple:scaled:
     desc: Run the full k6 benchmark flow against the simple variant with scaled backend
     cmds:
-      - task distributed:down
-      - task simple:down
+      - task bench:down
       - task simple:up:scaled
       - |
         set -eu
@@ -108,9 +252,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -137,8 +284,7 @@ tasks:
   simple:caddy:
     desc: Run the full k6 benchmark flow against the simple variant with Caddy gateway
     cmds:
-      - task distributed:down
-      - task simple:down
+      - task bench:down
       - task simple:up:caddy
       - |
         set -eu
@@ -165,9 +311,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -194,8 +343,7 @@ tasks:
   simple:direct:
     desc: Run the full k6 benchmark flow against simple backend directly, without gateway
     cmds:
-      - task distributed:down
-      - task simple:down
+      - task bench:down
       - task simple:up:direct
       - |
         set -eu
@@ -222,9 +370,284 @@ tasks:
           sleep 1
         done
 
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
+
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple-rs:
+    desc: Run the full k6 benchmark flow against the simple Rust variant with nginx gateway
+    cmds:
+      - task bench:down
+      - task simple-rs:up
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-rs-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-rs/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-rs"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple-rs \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple-rs:direct:
+    desc: Run the full k6 benchmark flow against the simple Rust backend directly, without gateway
+    cmds:
+      - task bench:down
+      - task simple-rs:up:direct
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-rs-direct-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-rs-direct/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-rs-direct"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple-rs \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create-existing.json" \
+          bench/k6/scenarios/create-existing.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-create.json" \
+          bench/k6/setup/warmup-create.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/create.json" \
+          bench/k6/scenarios/create.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple-rs:redirect:direct:
+    desc: Run simple Rust redirect benchmarks against the backend directly, without gateway
+    cmds:
+      - task bench:down
+      - task simple-rs:up:direct
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-rs-direct-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-rs-direct/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-rs-direct"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple-rs \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple-rs:redirect:scaled:
+    desc: Run simple Rust redirect benchmarks through nginx with scaled backend
+    cmds:
+      - task bench:down
+      - task simple-rs:up:scaled
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-rs-redirect-scaled-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-rs-redirect-scaled/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-rs-redirect-scaled"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+        echo "backend_scale=${BACKEND_SCALE:-3}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple-rs \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        echo "results=${RESULT_DIR}"
+
+  simple-rs:scaled:
+    desc: Run the full k6 benchmark flow against the simple Rust variant with scaled backend
+    cmds:
+      - task bench:down
+      - task simple-rs:up:scaled
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-simple-rs-scaled-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/simple-rs-scaled/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=simple-rs-scaled"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        node bench/scripts/run-seed.mjs \
+          --store mysql \
+          --variant-dir variants/simple-rs \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -251,7 +674,7 @@ tasks:
   distributed:
     desc: Run the full k6 benchmark flow against the distributed variant with nginx gateway
     cmds:
-      - task simple:down
+      - task bench:down
       - task distributed:up
       - |
         set -eu
@@ -278,9 +701,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store redis \
+          --variant-dir variants/distributed \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -307,8 +733,7 @@ tasks:
   distributed:scaled:
     desc: Run the full k6 benchmark flow against the distributed variant with scaled backends
     cmds:
-      - task simple:down
-      - task distributed:down
+      - task bench:down
       - task distributed:up:scaled
       - |
         set -eu
@@ -335,9 +760,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store redis \
+          --variant-dir variants/distributed \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -364,8 +792,7 @@ tasks:
   distributed:direct:
     desc: Run distributed create benchmarks against the backend directly, without gateway
     cmds:
-      - task simple:down
-      - task distributed:down
+      - task bench:down
       - task distributed:up:direct
       - |
         set -eu
@@ -392,9 +819,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store redis \
+          --variant-dir variants/distributed \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/create-existing.json" \
@@ -413,8 +843,7 @@ tasks:
   distributed:redirect:direct:
     desc: Run distributed redirect benchmarks against backend-redirect directly, without gateway
     cmds:
-      - task simple:down
-      - task distributed:down
+      - task bench:down
       - task distributed:up:redirect:direct
       - |
         set -eu
@@ -443,9 +872,61 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${SEED_BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store redis \
+          --variant-dir variants/distributed \
+          --base-url "${SEED_BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/warmup-redirect.json" \
+          bench/k6/setup/warmup-redirect.ts
+
+        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
+          --summary-export "${RESULT_DIR}/redirect.json" \
+          bench/k6/scenarios/redirect.ts
+
+        echo "results=${RESULT_DIR}"
+
+  distributed:redirect:scaled:
+    desc: Run distributed redirect benchmarks through nginx with scaled backend-redirect
+    cmds:
+      - task bench:down
+      - task distributed:up:redirect:scaled
+      - |
+        set -eu
+        RUN_ID="${RUN_ID:-distributed-redirect-scaled-$(date +%Y%m%d%H%M%S)}"
+        BASE_URL="${BASE_URL:-http://localhost:8080}"
+        RESULT_DIR="bench/results/distributed-redirect-scaled/${RUN_ID}"
+
+        mkdir -p "${RESULT_DIR}"
+
+        echo "variant=distributed-redirect-scaled"
+        echo "run_id=${RUN_ID}"
+        echo "base_url=${BASE_URL}"
+        echo "backend_scale=${BACKEND_SCALE:-1}"
+        echo "backend_redirect_scale=${BACKEND_REDIRECT_SCALE:-3}"
+
+        for attempt in $(seq 1 60); do
+          if curl -fsS "${BASE_URL}/health" >/dev/null; then
+            break
+          fi
+
+          if [ "${attempt}" -eq 60 ]; then
+            echo "Backend did not become healthy: ${BASE_URL}/health" >&2
+            exit 1
+          fi
+
+          sleep 1
+        done
+
+        node bench/scripts/run-seed.mjs \
+          --store redis \
+          --variant-dir variants/distributed \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \
@@ -460,8 +941,7 @@ tasks:
   distributed:caddy:
     desc: Run the full k6 benchmark flow against the distributed variant with Caddy gateway
     cmds:
-      - task simple:down
-      - task distributed:down
+      - task bench:down
       - task distributed:up:caddy
       - |
         set -eu
@@ -488,9 +968,12 @@ tasks:
           sleep 1
         done
 
-        BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
-          --summary-export "${RESULT_DIR}/seed-aliases.json" \
-          bench/k6/setup/seed-aliases.ts
+        node bench/scripts/run-seed.mjs \
+          --store redis \
+          --variant-dir variants/distributed \
+          --base-url "${BASE_URL}" \
+          --result-dir "${RESULT_DIR}" \
+          --run-id "${RUN_ID}"
 
         BASE_URL="${BASE_URL}" RUN_ID="${RUN_ID}" k6 run \
           --summary-export "${RESULT_DIR}/warmup-redirect.json" \

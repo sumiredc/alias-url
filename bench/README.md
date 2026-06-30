@@ -1,175 +1,138 @@
-# k6 benchmark
+# ベンチマーク
 
-Backend variants share the same public API, so these scripts are organized by
-scenario rather than by implementation. Switch the target with `BASE_URL`.
+k6 で `simple` / `simple-rs` / `distributed` を比較します。
 
-## Prerequisites
+## 全体像
 
-- k6 v0.57 or newer
-- one backend variant running on `http://localhost:8080`
+```mermaid
+flowchart LR
+    task[Taskfile] --> seed{seed profile}
+    seed -->|small| apiSeed[k6 API seed]
+    seed -->|medium / large| csv[CSV 生成・再利用]
+    csv --> mysql[MySQL LOAD DATA]
+    csv --> redis[Redis redis-cli --pipe]
 
-## Common environment variables
-
-| Name | Default | Description |
-| --- | --- | --- |
-| `BASE_URL` | `http://localhost:8080` | Target backend URL |
-| `VUS` | scenario-specific | Number of virtual users |
-| `DURATION` | scenario-specific | Measurement duration |
-| `RUN_ID` | `local` | Alias namespace for this run |
-| `ALIAS_PREFIX` | scenario-specific | Alias prefix |
-| `SEED_COUNT` | `1000` | Number of aliases used by seed/redirect scripts |
-
-## Typical flow
-
-Run the full flow for each variant with Task:
-
-```bash
-task bench:simple
-task bench:distributed
+    task --> k6[k6 scenarios]
+    k6 --> results[bench/results]
+    results --> compare[compare-results.mjs]
 ```
 
-The default gateway is nginx for both variants.
+## Seed Profile
 
-Run scaled backend versions through the nginx gateway:
+| profile | 件数 | 投入方法 |
+| --- | ---: | --- |
+| `small` | 1,000 | k6 から `POST /api/aliases` |
+| `medium` | 1,000,000 | CSV + bulk load |
+| `large` | 100,000,000 | CSV + bulk load |
 
-```bash
-task bench:simple:scaled
-task bench:distributed:scaled
-task bench:compare:scaled
+CSV は `bench/seed-data/{SEED_NAMESPACE}.csv` に生成します。デフォルトの `SEED_NAMESPACE` は seed 件数です。
+
+```mermaid
+flowchart LR
+    count[SEED_COUNT] --> ns[SEED_NAMESPACE]
+    ns --> file["bench/seed-data/{namespace}.csv"]
+    file --> simple[simple]
+    file --> rust[simple-rs]
+    file --> dist[distributed]
 ```
 
-One-liner:
+例:
 
 ```bash
-task bench:simple:scaled && task bench:distributed:scaled && task bench:compare:scaled
+SEED_PROFILE=medium task bench:all
+SEED_PROFILE=large task bench:redirect:scaled:simple-rs:large
 ```
 
-If you start simple scaled manually:
+## よく使う Task
 
 ```bash
-docker compose -f variants/simple/compose.yaml up -d --build --scale backend=3
+task bench:all
+task bench:all:medium
+task bench:all:large
+
+task bench:all:scaled
+task bench:all:medium:scaled
+task bench:all:large:scaled
 ```
 
-Run simple without the gateway to isolate gateway overhead:
+redirect だけを `simple-rs` と `distributed` で比較する場合:
 
 ```bash
-task bench:simple:direct
+task bench:redirect:direct:simple-rs
+task bench:redirect:direct:simple-rs:medium
+task bench:redirect:direct:simple-rs:large
+
+task bench:redirect:scaled:simple-rs
+task bench:redirect:scaled:simple-rs:medium
+task bench:redirect:scaled:simple-rs:large
 ```
 
-Distributed has separate backend roles, so direct benchmarks are split by target:
+large redirect の調整例:
 
 ```bash
-task bench:distributed:direct
-task bench:distributed:redirect:direct
+DB_MAX_CONNECTIONS=32 \
+WORKER_MAX_REQUESTS=10000000 \
+BACKEND_SCALE=3 \
+BACKEND_REDIRECT_SCALE=3 \
+task bench:redirect:scaled:simple-rs:large
 ```
 
-`bench:distributed:direct` targets the generic backend directly and runs
-`seed-aliases -> create-existing -> warmup-create -> create`.
-`bench:distributed:redirect:direct` seeds through the generic backend on
-`http://localhost:8081`, then measures `backend-redirect` directly on
-`http://localhost:8080`.
+## 計測フロー
 
-Run with Caddy gateway when you need a secondary comparison:
+```mermaid
+sequenceDiagram
+    participant Task
+    participant Docker
+    participant Seeder
+    participant K6
+    participant Results
+
+    Task->>Docker: bench:down
+    Task->>Docker: target variant up
+    Task->>Seeder: seed
+    Seeder-->>Task: ready
+    Task->>K6: warmup-redirect
+    Task->>K6: redirect
+    Task->>K6: create-existing
+    Task->>K6: warmup-create
+    Task->>K6: create
+    K6-->>Results: summary JSON
+```
+
+## シナリオ
+
+| シナリオ | 内容 |
+| --- | --- |
+| `redirect` | seed 済み alias を読み、`302` を期待 |
+| `create-existing` | seed 済み alias を再登録し、`409` を期待 |
+| `create` | 未使用 alias を登録し、`201` を期待 |
+| `health` | HTTP の基準値 |
+
+`redirect` は k6 の URL tag を `GET /:alias` に固定し、alias ごとの高 cardinality metrics を避けます。
+
+## 比較
 
 ```bash
-task bench:simple:caddy
-task bench:distributed:caddy
-```
-
-Gateway tasks start their target variant and run:
-
-```text
-seed-aliases -> warmup-redirect -> redirect -> create-existing -> warmup-create -> create
-```
-
-JSON summaries are written under `bench/results/{variant}/{RUN_ID}/`.
-The task stops the other variant first to avoid the shared `8080` port
-conflicting.
-
-Compare the latest saved simple/distributed runs:
-
-```bash
-task bench:compare
-```
-
-Compare the latest scaled runs:
-
-```bash
-task bench:compare:scaled
-```
-
-Compare direct runs by matching only the scenarios that mean the same thing:
-
-```bash
+task bench:compare:all
+task bench:compare:scaled:all
 task bench:compare:direct:create
 task bench:compare:direct:redirect
+task bench:compare:redirect:scaled:simple-rs
 ```
 
-`compare:direct:create` compares `simple-direct` with `distributed-direct`
-for `create-existing` and `create`.
-`compare:direct:redirect` compares `simple-direct` with
-`distributed-redirect-direct` for `redirect`.
+出力には `rps`, `med`, `p95`, `p99`, `p99.9`, `max`, status counter, conflict reason を含みます。
 
-The comparison includes custom status counters for new runs, such as
-`201`, `302`, `409`, `502`, and `5xx`.
-For distributed conflicts, it also includes `exists` and `might_exist`
-reason counters.
+## 主な環境変数
 
-You can also compare specific run directories:
-
-```bash
-node bench/scripts/compare-results.mjs \
-  --simple=bench/results/simple/simple-20260627004504 \
-  --distributed=bench/results/distributed/distributed-20260627011702 \
-  --scenarios=redirect,create
-```
-
-You can fix the run namespace when comparing variants:
-
-```bash
-RUN_ID=compare-001 task bench:simple
-RUN_ID=compare-001 task bench:distributed
-```
-
-You can still run each k6 script manually:
-
-```bash
-task simple:up
-
-k6 run bench/k6/setup/seed-aliases.ts
-k6 run bench/k6/setup/warmup-redirect.ts
-k6 run bench/k6/scenarios/redirect.ts
-
-k6 run bench/k6/setup/warmup-create.ts
-k6 run bench/k6/scenarios/create.ts
-```
-
-For `distributed`, run the same scripts after starting that variant:
-
-```bash
-task simple:down
-task distributed:up
-
-k6 run bench/k6/setup/seed-aliases.ts
-k6 run bench/k6/setup/warmup-redirect.ts
-k6 run bench/k6/scenarios/redirect.ts
-```
-
-Use the same explicit `RUN_ID` for `seed-aliases.ts`, `warmup-redirect.ts`, and
-`redirect.ts` when you want to isolate a run from previous local data:
-
-```bash
-RUN_ID=compare-001 k6 run bench/k6/setup/seed-aliases.ts
-RUN_ID=compare-001 k6 run bench/k6/scenarios/redirect.ts
-```
-
-## Scenarios
-
-- `scenarios/health.ts`: HTTP/application baseline, no DB or Redis access.
-- `scenarios/create.ts`: unique alias creation.
-- `scenarios/redirect.ts`: reads pre-seeded aliases and expects `302`.
-- `scenarios/create-existing.ts`: posts pre-seeded aliases again and expects `409`.
-- `scenarios/create-conflict.ts`: intentionally creates conflicts to measure uniqueness handling.
-
-Warmup scripts are intentionally separate from measurement scripts so warmup
-traffic does not pollute k6 summary metrics.
+| 変数 | 既定値 | 用途 |
+| --- | --- | --- |
+| `BASE_URL` | `http://localhost:8080` | k6 の接続先 |
+| `RUN_ID` | task ごと | 結果ディレクトリ・alias namespace |
+| `SEED_PROFILE` | `small` | `small` / `medium` / `large` |
+| `SEED_COUNT` | profile 依存 | seed 件数の上書き |
+| `SEED_NAMESPACE` | `SEED_COUNT` | CSV 再利用単位 |
+| `DB_MAX_CONNECTIONS` | variant 依存 | `simple-rs` MySQL pool 上限 |
+| `WORKER_MAX_REQUESTS` | `100000` | FrankenPHP worker recycle 閾値 |
+| `BACKEND_SCALE` | task 依存 | backend replica 数 |
+| `BACKEND_REDIRECT_SCALE` | task 依存 | redirect backend replica 数 |
+| `REDIRECT_CACHE_MAX_ENTRIES` | `0` | distributed redirect のローカル cache |

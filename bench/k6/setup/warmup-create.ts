@@ -13,7 +13,7 @@ const cfg = config({
 export const options = {
   vus: cfg.vus,
   duration: cfg.duration,
-  summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
+  summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
   thresholds: {
     checks: ['rate>0.99'],
   },
