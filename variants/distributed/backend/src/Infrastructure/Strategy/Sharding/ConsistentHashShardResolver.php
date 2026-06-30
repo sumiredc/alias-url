@@ -9,12 +9,17 @@ use RuntimeException;
 
 final class ConsistentHashShardResolver
 {
-    private const VIRTUAL_NODES = 128;
+    private const VIRTUAL_NODES = 1024;
 
     /**
      * @var array<int, RedisShard>
      */
     private array $ring = [];
+
+    /**
+     * @var list<int>
+     */
+    private array $positions = [];
 
     /**
      * @param list<RedisShard> $shards
@@ -32,25 +37,19 @@ final class ConsistentHashShardResolver
         }
 
         ksort($this->ring, SORT_NUMERIC);
+        $this->positions = array_keys($this->ring);
     }
 
     public function resolve(string $alias): RedisShard
     {
         $hash = $this->hash($alias);
+        $position = $this->positions[$this->lowerBound($hash) % count($this->positions)];
 
-        foreach ($this->ring as $position => $shard) {
-            if ($hash <= $position) {
-                return $shard;
-            }
-        }
-
-        $firstShard = reset($this->ring);
-
-        if (!$firstShard instanceof RedisShard) {
+        if (!isset($this->ring[$position])) {
             throw new RuntimeException('Redis shard ring is empty.');
         }
 
-        return $firstShard;
+        return $this->ring[$position];
     }
 
     private function hash(string $value): int
@@ -58,5 +57,23 @@ final class ConsistentHashShardResolver
         $hash = crc32($value);
 
         return $hash < 0 ? $hash + 4_294_967_296 : $hash;
+    }
+
+    private function lowerBound(int $hash): int
+    {
+        $left = 0;
+        $right = count($this->positions);
+
+        while ($left < $right) {
+            $middle = intdiv($left + $right, 2);
+
+            if ($this->positions[$middle] < $hash) {
+                $left = $middle + 1;
+            } else {
+                $right = $middle;
+            }
+        }
+
+        return $left;
     }
 }

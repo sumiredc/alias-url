@@ -8,6 +8,7 @@ use Alias\Distributed\Infrastructure\Strategy\Sharding\ConsistentHashShardResolv
 use Dotenv\Dotenv;
 
 const DEFAULT_WORKER_MAX_REQUESTS = 100000;
+const DEFAULT_REDIRECT_CACHE_MAX_ENTRIES = 0;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -16,15 +17,16 @@ $dotenv->safeLoad();
 
 $shards = array_map(
     static fn (string $address): RedisShard => RedisShard::fromAddress($address),
-    explode(',', envString('REDIS_SHARDS', 'redis-1:6379,redis-2:6379,redis-3:6379')),
+    explode(',', envString('REDIS_SHARDS', 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379')),
 );
 
 $shardResolver = new ConsistentHashShardResolver($shards);
 $clientProvider = new RedisClientProvider($shards);
+$redirectCache = new RedirectCache(envInt('REDIRECT_CACHE_MAX_ENTRIES', DEFAULT_REDIRECT_CACHE_MAX_ENTRIES));
 $nbRequests = 0;
 $workerMaxRequests = workerMaxRequests();
 
-while (frankenphp_handle_request(function () use ($shardResolver, $clientProvider, &$nbRequests): void {
+while (frankenphp_handle_request(function () use ($shardResolver, $clientProvider, $redirectCache, &$nbRequests): void {
     $nbRequests++;
 
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -48,9 +50,17 @@ while (frankenphp_handle_request(function () use ($shardResolver, $clientProvide
     }
 
     $alias = $matches[1];
+    $cachedUrl = $redirectCache->get($alias);
+
+    if ($cachedUrl !== null) {
+        header('Location: ' . $cachedUrl, true, 302);
+
+        return;
+    }
+
     $shard = $shardResolver->resolve($alias);
     $client = $clientProvider->clientFor($shard);
-    $payload = $client->executeRaw(['GET', sprintf('alias:%s', $alias)]);
+    $payload = $client->get($alias);
 
     if (!is_string($payload) || $payload === '') {
         header('Content-Type: text/plain');
@@ -60,17 +70,8 @@ while (frankenphp_handle_request(function () use ($shardResolver, $clientProvide
         return;
     }
 
-    $url = urlFromPayload($payload);
-
-    if ($url === null) {
-        header('Content-Type: text/plain');
-        http_response_code(500);
-        echo 'Invalid alias payload.';
-
-        return;
-    }
-
-    header('Location: ' . $url, true, 302);
+    $redirectCache->set($alias, $payload);
+    header('Location: ' . $payload, true, 302);
 })) {
     if ($nbRequests >= $workerMaxRequests) {
         break;
@@ -86,29 +87,62 @@ function envString(string $key, string $default): string
 
 function workerMaxRequests(): int
 {
-    $value = $_ENV['WORKER_MAX_REQUESTS'] ?? DEFAULT_WORKER_MAX_REQUESTS;
-    $maxRequests = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-
-    return is_int($maxRequests) ? $maxRequests : DEFAULT_WORKER_MAX_REQUESTS;
+    return envInt('WORKER_MAX_REQUESTS', DEFAULT_WORKER_MAX_REQUESTS);
 }
 
-function urlFromPayload(string $payload): ?string
+function envInt(string $key, int $default): int
 {
-    if ($payload[0] !== '{') {
-        return $payload;
+    $value = $_ENV[$key] ?? $default;
+    $maxRequests = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+    return is_int($maxRequests) ? $maxRequests : $default;
+}
+
+final class RedirectCache
+{
+    /**
+     * @var array<string, string>
+     */
+    private array $items = [];
+
+    public function __construct(
+        private readonly int $maxEntries,
+    ) {
     }
 
-    try {
-        $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
-    } catch (JsonException) {
-        return null;
+    public function get(string $alias): ?string
+    {
+        if ($this->maxEntries <= 0 || !isset($this->items[$alias])) {
+            return null;
+        }
+
+        $url = $this->items[$alias];
+        unset($this->items[$alias]);
+        $this->items[$alias] = $url;
+
+        return $url;
     }
 
-    if (!is_array($decoded)) {
-        return null;
+    public function set(string $alias, string $url): void
+    {
+        if ($this->maxEntries <= 0) {
+            return;
+        }
+
+        if (isset($this->items[$alias])) {
+            unset($this->items[$alias]);
+        }
+
+        $this->items[$alias] = $url;
+
+        if (count($this->items) <= $this->maxEntries) {
+            return;
+        }
+
+        $oldestAlias = array_key_first($this->items);
+
+        if (is_string($oldestAlias)) {
+            unset($this->items[$oldestAlias]);
+        }
     }
-
-    $url = $decoded['url'] ?? null;
-
-    return is_string($url) && $url !== '' ? $url : null;
 }

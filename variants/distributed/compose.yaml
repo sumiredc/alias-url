@@ -1,3 +1,13 @@
+x-redis: &redis
+  image: redis:8-alpine
+  command: ["redis-server", "--appendonly", "yes"]
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 20
+    start_period: 5s
+
 services:
   gateway:
     image: nginx:1.27-alpine
@@ -19,12 +29,34 @@ services:
       - path: backend/.env.example
       - path: backend/.env
         required: false
+    environment:
+      WORKER_MAX_REQUESTS: ${WORKER_MAX_REQUESTS:-100000}
+      LOCAL_BLOOM_FILTER_BITS: ${LOCAL_BLOOM_FILTER_BITS:-10000000}
+      LOCAL_BLOOM_FILTER_HASHES: ${LOCAL_BLOOM_FILTER_HASHES:-7}
     depends_on:
       redis-1:
         condition: service_healthy
       redis-2:
         condition: service_healthy
       redis-3:
+        condition: service_healthy
+      redis-4:
+        condition: service_healthy
+      redis-5:
+        condition: service_healthy
+      redis-6:
+        condition: service_healthy
+      redis-7:
+        condition: service_healthy
+      redis-8:
+        condition: service_healthy
+      redis-9:
+        condition: service_healthy
+      redis-10:
+        condition: service_healthy
+      redis-11:
+        condition: service_healthy
+      redis-12:
         condition: service_healthy
 
   backend-redirect:
@@ -38,6 +70,11 @@ services:
       - path: backend/.env.example
       - path: backend/.env
         required: false
+    environment:
+      WORKER_MAX_REQUESTS: ${WORKER_MAX_REQUESTS:-100000}
+      LOCAL_BLOOM_FILTER_BITS: ${LOCAL_BLOOM_FILTER_BITS:-10000000}
+      LOCAL_BLOOM_FILTER_HASHES: ${LOCAL_BLOOM_FILTER_HASHES:-7}
+      REDIRECT_CACHE_MAX_ENTRIES: ${REDIRECT_CACHE_MAX_ENTRIES:-0}
     depends_on:
       redis-1:
         condition: service_healthy
@@ -45,44 +82,95 @@ services:
         condition: service_healthy
       redis-3:
         condition: service_healthy
+      redis-4:
+        condition: service_healthy
+      redis-5:
+        condition: service_healthy
+      redis-6:
+        condition: service_healthy
+      redis-7:
+        condition: service_healthy
+      redis-8:
+        condition: service_healthy
+      redis-9:
+        condition: service_healthy
+      redis-10:
+        condition: service_healthy
+      redis-11:
+        condition: service_healthy
+      redis-12:
+        condition: service_healthy
 
   redis-1:
-    image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
+    <<: *redis
     volumes:
       - redis_1_data:/data
 
   redis-2:
-    image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
+    <<: *redis
     volumes:
       - redis_2_data:/data
 
   redis-3:
-    image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
+    <<: *redis
     volumes:
       - redis_3_data:/data
+
+  redis-4:
+    <<: *redis
+    volumes:
+      - redis_4_data:/data
+
+  redis-5:
+    <<: *redis
+    volumes:
+      - redis_5_data:/data
+
+  redis-6:
+    <<: *redis
+    volumes:
+      - redis_6_data:/data
+
+  redis-7:
+    <<: *redis
+    volumes:
+      - redis_7_data:/data
+
+  redis-8:
+    <<: *redis
+    volumes:
+      - redis_8_data:/data
+
+  redis-9:
+    <<: *redis
+    volumes:
+      - redis_9_data:/data
+
+  redis-10:
+    <<: *redis
+    volumes:
+      - redis_10_data:/data
+
+  redis-11:
+    <<: *redis
+    volumes:
+      - redis_11_data:/data
+
+  redis-12:
+    <<: *redis
+    volumes:
+      - redis_12_data:/data
 
 volumes:
   redis_1_data:
   redis_2_data:
   redis_3_data:
+  redis_4_data:
+  redis_5_data:
+  redis_6_data:
+  redis_7_data:
+  redis_8_data:
+  redis_9_data:
+  redis_10_data:
+  redis_11_data:
+  redis_12_data:

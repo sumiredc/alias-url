@@ -6,7 +6,6 @@ namespace Alias\Distributed\Infrastructure\Persistence\Redis;
 
 use Alias\Distributed\Application\Port\AliasRepository;
 use Alias\Distributed\Infrastructure\Strategy\Sharding\ConsistentHashShardResolver;
-use JsonException;
 
 final class RedisAliasRepository implements AliasRepository
 {
@@ -16,60 +15,56 @@ final class RedisAliasRepository implements AliasRepository
     ) {
     }
 
-    /**
-     * @throws JsonException
-     */
     public function create(string $alias, string $url): bool
     {
         $shard = $this->shardResolver->resolve($alias);
         $client = $this->clientProvider->clientFor($shard);
-        $payload = json_encode([
-            'url' => $url,
-            'created_at' => gmdate('c'),
-        ], JSON_THROW_ON_ERROR);
 
-        $result = $client->executeRaw(['SET', $this->key($alias), $payload, 'NX']);
+        $result = $client->set($this->key($alias), $url, ['nx']);
 
-        return $result === 'OK';
+        return $result === true;
     }
 
     /**
-     * @return array{alias: string, url: string, created_at: string}|null
-     *
-     * @throws JsonException
+     * @return array{alias: string, url: string}|null
      */
     public function findByAlias(string $alias): ?array
     {
         $shard = $this->shardResolver->resolve($alias);
         $client = $this->clientProvider->clientFor($shard);
-        $payload = $client->executeRaw(['GET', $this->key($alias)]);
+        $payload = $client->get($this->key($alias));
 
         if (!is_string($payload) || $payload === '') {
             return null;
         }
 
-        $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
+        if ($payload[0] !== '{') {
+            return [
+                'alias' => $alias,
+                'url' => $payload,
+            ];
+        }
+
+        $decoded = json_decode($payload, true);
 
         if (!is_array($decoded)) {
             return null;
         }
 
         $url = $decoded['url'] ?? null;
-        $createdAt = $decoded['created_at'] ?? null;
 
-        if (!is_string($url) || !is_string($createdAt)) {
+        if (!is_string($url)) {
             return null;
         }
 
         return [
             'alias' => $alias,
             'url' => $url,
-            'created_at' => $createdAt,
         ];
     }
 
     private function key(string $alias): string
     {
-        return sprintf('alias:%s', $alias);
+        return $alias;
     }
 }

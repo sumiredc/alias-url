@@ -33,7 +33,7 @@ $builder->addDefinitions([
     'redis.shards' => static function () use ($env): array {
         return array_map(
             static fn (string $address): RedisShard => RedisShard::fromAddress($address),
-            explode(',', $env('REDIS_SHARDS', 'redis-1:6379,redis-2:6379,redis-3:6379')),
+            explode(',', $env('REDIS_SHARDS', 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379')),
         );
     },
     ConsistentHashShardResolver::class => static function (Psr\Container\ContainerInterface $container): ConsistentHashShardResolver {

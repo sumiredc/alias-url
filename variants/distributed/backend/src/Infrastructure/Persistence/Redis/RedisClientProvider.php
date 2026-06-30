@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Alias\Distributed\Infrastructure\Persistence\Redis;
 
-use Alias\Distributed\Infrastructure\Persistence\Redis\RedisShard;
-use Predis\Client;
+use Redis;
 
 final class RedisClientProvider
 {
     /**
-     * @var array<string, Client>
+     * @var array<string, Redis>
      */
     private array $clients = [];
 
@@ -22,16 +21,15 @@ final class RedisClientProvider
     ) {
     }
 
-    public function clientFor(RedisShard $shard): Client
+    public function clientFor(RedisShard $shard): Redis
     {
         $key = $shard->key();
 
         if (!isset($this->clients[$key])) {
-            $this->clients[$key] = new Client([
-                'scheme' => 'tcp',
-                'host' => $shard->host,
-                'port' => $shard->port,
-            ]);
+            $client = new Redis();
+            $client->connect($shard->host, $shard->port);
+
+            $this->clients[$key] = $client;
         }
 
         return $this->clients[$key];

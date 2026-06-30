@@ -11,15 +11,19 @@ tasks:
 
   up:scaled:
     cmds:
-      - COMPOSE_PARALLEL_LIMIT=1 docker compose -f compose.yaml up -d --build --scale backend=3 --scale backend-redirect=3
+      - COMPOSE_PARALLEL_LIMIT=1 docker compose -f compose.yaml up -d --build --scale backend=${BACKEND_SCALE:-3} --scale backend-redirect=${BACKEND_REDIRECT_SCALE:-3}
+
+  up:redirect:scaled:
+    cmds:
+      - COMPOSE_PARALLEL_LIMIT=1 docker compose -f compose.yaml up -d --build --scale backend=${BACKEND_SCALE:-1} --scale backend-redirect=${BACKEND_REDIRECT_SCALE:-3}
 
   up:direct:
     cmds:
-      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend redis-1 redis-2 redis-3
+      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
 
   up:redirect:direct:
     cmds:
-      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect redis-1 redis-2 redis-3
+      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
 
   down:
     cmds:
