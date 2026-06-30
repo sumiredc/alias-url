@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  up:
+    cmds:
+      - docker compose -f compose.yaml up -d --build
+
+  up:scaled:
+    cmds:
+      - docker compose -f compose.yaml up -d --build --scale backend=${BACKEND_SCALE:-3}
+
+  up:direct:
+    cmds:
+      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend mysql
+
+  down:
+    cmds:
+      - docker compose -f compose.yaml down -v
+
+  logs:
+    cmds:
+      - docker compose -f compose.yaml logs -f
