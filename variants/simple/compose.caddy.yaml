@@ -1,5 +1,0 @@
-services:
-  gateway:
-    image: caddy:2.11-alpine
-    volumes: !override
-      - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro

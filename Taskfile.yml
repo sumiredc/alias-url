@@ -35,12 +35,13 @@ includes:
 
 tasks:
   default:
+    desc: 利用できるタスクを一覧表示する
     cmds:
       - task --list-all
     silent: true
 
   down:all:
-    desc: Stop all local backend variants and remove their volumes
+    desc: すべてのバックエンド構成を停止し、ボリュームを削除する
     cmds:
       - task simple:down
       - task simple-rs:down

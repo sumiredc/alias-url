@@ -111,18 +111,18 @@ async function seedMysql({ variantDir: composeDir, csv: csvPath }) {
 }
 
 async function seedRedis({ variantDir: composeDir, csv: csvPath }) {
-  const shards = redisShards();
-  const ring = consistentHashRing(shards);
+  const nodes = redisClusterNodes();
+  const slotRanges = await redisClusterSlotRanges({ composeDir, nodes });
   const pipes = new Map();
 
-  for (const shard of shards) {
+  for (const node of nodes) {
     const child = spawn(
       'docker',
-      ['compose', '-f', path.join(composeDir, 'compose.yaml'), 'exec', '-T', shard.service, 'redis-cli', '--pipe'],
+      ['compose', '-f', path.join(composeDir, 'compose.yaml'), 'exec', '-T', node.service, 'redis-cli', '--pipe'],
       { stdio: ['pipe', 'inherit', 'inherit'] },
     );
 
-    pipes.set(shard.key, child);
+    pipes.set(node.key, child);
   }
 
   const reader = readline.createInterface({
@@ -138,8 +138,8 @@ async function seedRedis({ variantDir: composeDir, csv: csvPath }) {
     const comma = line.indexOf(',');
     const alias = line.slice(0, comma);
     const url = line.slice(comma + 1);
-    const shard = resolveShard(ring, alias);
-    const child = pipes.get(shard.key);
+    const node = resolveClusterNode(slotRanges, alias);
+    const child = pipes.get(node.key);
     const command = respCommand(['SET', alias, url, 'NX']);
 
     if (!child.stdin.write(command)) {
@@ -154,14 +154,14 @@ async function seedRedis({ variantDir: composeDir, csv: csvPath }) {
   await Promise.all([...pipes.values()].map(waitFor));
 }
 
-function redisShards() {
-  const value = process.env.REDIS_SHARDS ?? 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379';
+function redisClusterNodes() {
+  const value = process.env.REDIS_CLUSTER_NODES ?? 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379';
 
   return value.split(',').map((address) => {
     const [host, port] = address.trim().split(':', 2);
 
     if (!host || !port) {
-      throw new Error(`Invalid Redis shard address: ${address}`);
+      throw new Error(`Invalid Redis node address: ${address}`);
     }
 
     return {
@@ -173,59 +173,88 @@ function redisShards() {
   });
 }
 
-function consistentHashRing(shards) {
-  const ring = [];
+async function redisClusterSlotRanges({ composeDir, nodes }) {
+  const [entrypoint] = nodes;
+  const output = await runCapture('docker', [
+    'compose',
+    '-f',
+    path.join(composeDir, 'compose.yaml'),
+    'exec',
+    '-T',
+    entrypoint.service,
+    'redis-cli',
+    '--json',
+    'CLUSTER',
+    'SLOTS',
+  ]);
+  const slots = JSON.parse(output);
+  const nodesByKey = new Map(nodes.map((node) => [node.key, node]));
 
-  for (const shard of shards) {
-    for (let index = 0; index < 1024; index += 1) {
-      ring.push({
-        position: crc32(`${shard.key}#${index}`),
-        shard,
-      });
+  return slots.sort((left, right) => left[0] - right[0]).map((slot, index) => {
+    const [start, end, primary] = slot;
+    const [host, port] = primary;
+    const key = `${host}:${port}`;
+    const node = nodesByKey.get(key) ?? nodesByKey.get(`${host}:${Number(port)}`) ?? nodes[index];
+
+    if (!node) {
+      throw new Error(`Redis Cluster returned an unknown node: ${key}`);
     }
+
+    return { start, end, node };
+  });
+}
+
+function resolveClusterNode(slotRanges, alias) {
+  const slot = redisClusterSlot(alias);
+  const range = slotRanges.find((candidate) => slot >= candidate.start && slot <= candidate.end);
+
+  if (!range) {
+    throw new Error(`No Redis Cluster node owns slot ${slot}`);
   }
 
-  ring.sort((left, right) => left.position - right.position);
-
-  return ring;
+  return range.node;
 }
 
-function resolveShard(ring, alias) {
-  const hash = crc32(alias);
-  const index = lowerBound(ring, hash);
+function redisClusterSlot(key) {
+  const tag = redisHashTag(key);
 
-  return ring[index % ring.length].shard;
+  return crc16(tag) % 16384;
 }
 
-function lowerBound(ring, hash) {
-  let left = 0;
-  let right = ring.length;
+function redisHashTag(key) {
+  const start = key.indexOf('{');
 
-  while (left < right) {
-    const middle = Math.floor((left + right) / 2);
-
-    if (ring[middle].position < hash) {
-      left = middle + 1;
-    } else {
-      right = middle;
-    }
+  if (start === -1) {
+    return key;
   }
 
-  return left;
+  const end = key.indexOf('}', start + 1);
+
+  if (end === -1 || end === start + 1) {
+    return key;
+  }
+
+  return key.slice(start + 1, end);
 }
 
-function crc32(value) {
-  let crc = 0xffffffff;
+function crc16(value) {
+  let crc = 0;
 
   for (let index = 0; index < value.length; index += 1) {
-    crc ^= value.charCodeAt(index);
+    crc ^= value.charCodeAt(index) << 8;
 
     for (let bit = 0; bit < 8; bit += 1) {
-      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+      if ((crc & 0x8000) !== 0) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc <<= 1;
+      }
+
+      crc &= 0xffff;
     }
   }
 
-  return (crc ^ 0xffffffff) >>> 0;
+  return crc;
 }
 
 function respCommand(values) {
@@ -319,6 +348,18 @@ function run(command, commandArgs) {
   const child = spawn(command, commandArgs, { stdio: 'inherit' });
 
   return waitFor(child);
+}
+
+function runCapture(command, commandArgs) {
+  const child = spawn(command, commandArgs, { stdio: ['ignore', 'pipe', 'inherit'] });
+  let output = '';
+
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', (chunk) => {
+    output += chunk;
+  });
+
+  return waitFor(child).then(() => output);
 }
 
 function waitFor(child) {

@@ -40,7 +40,7 @@ flowchart LR
 
 ```bash
 SEED_PROFILE=medium task bench:all
-SEED_PROFILE=large task bench:redirect:scaled:simple-rs:large
+SEED_PROFILE=large task bench:all:scaled
 ```
 
 ## よく使う Task
@@ -55,26 +55,14 @@ task bench:all:medium:scaled
 task bench:all:large:scaled
 ```
 
-redirect だけを `simple-rs` と `distributed` で比較する場合:
-
-```bash
-task bench:redirect:direct:simple-rs
-task bench:redirect:direct:simple-rs:medium
-task bench:redirect:direct:simple-rs:large
-
-task bench:redirect:scaled:simple-rs
-task bench:redirect:scaled:simple-rs:medium
-task bench:redirect:scaled:simple-rs:large
-```
-
-large redirect の調整例:
+large scaled の調整例:
 
 ```bash
 DB_MAX_CONNECTIONS=32 \
 WORKER_MAX_REQUESTS=10000000 \
 BACKEND_SCALE=3 \
 BACKEND_REDIRECT_SCALE=3 \
-task bench:redirect:scaled:simple-rs:large
+task bench:all:large:scaled
 ```
 
 ## 計測フロー
@@ -115,9 +103,6 @@ sequenceDiagram
 ```bash
 task bench:compare:all
 task bench:compare:scaled:all
-task bench:compare:direct:create
-task bench:compare:direct:redirect
-task bench:compare:redirect:scaled:simple-rs
 ```
 
 出力には `rps`, `med`, `p95`, `p99`, `p99.9`, `max`, status counter, conflict reason を含みます。

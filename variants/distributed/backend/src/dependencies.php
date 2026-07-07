@@ -6,8 +6,7 @@ use Alias\Distributed\Application\Port\AliasRepository;
 use Alias\Distributed\Application\Port\AliasUniquenessGuard;
 use Alias\Distributed\Infrastructure\Persistence\Redis\RedisAliasRepository;
 use Alias\Distributed\Infrastructure\Persistence\Redis\RedisClientProvider;
-use Alias\Distributed\Infrastructure\Persistence\Redis\RedisShard;
-use Alias\Distributed\Infrastructure\Strategy\Sharding\ConsistentHashShardResolver;
+use Alias\Distributed\Infrastructure\Persistence\Redis\RedisNode;
 use Alias\Distributed\Infrastructure\Strategy\Uniqueness\BloomFilter;
 use Alias\Distributed\Infrastructure\Strategy\Uniqueness\LocalAliasUniquenessGuard;
 use DI\ContainerBuilder;
@@ -30,23 +29,17 @@ $envInt = static function (string $key, int $default): int {
 };
 
 $builder->addDefinitions([
-    'redis.shards' => static function () use ($env): array {
+    'redis.nodes' => static function () use ($env): array {
         return array_map(
-            static fn (string $address): RedisShard => RedisShard::fromAddress($address),
-            explode(',', $env('REDIS_SHARDS', 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379')),
+            static fn (string $address): RedisNode => RedisNode::fromAddress($address),
+            explode(',', $env('REDIS_CLUSTER_NODES', 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379')),
         );
     },
-    ConsistentHashShardResolver::class => static function (Psr\Container\ContainerInterface $container): ConsistentHashShardResolver {
-        /** @var list<RedisShard> $shards */
-        $shards = $container->get('redis.shards');
-
-        return new ConsistentHashShardResolver($shards);
-    },
     RedisClientProvider::class => static function (Psr\Container\ContainerInterface $container): RedisClientProvider {
-        /** @var list<RedisShard> $shards */
-        $shards = $container->get('redis.shards');
+        /** @var list<RedisNode> $nodes */
+        $nodes = $container->get('redis.nodes');
 
-        return new RedisClientProvider($shards);
+        return new RedisClientProvider($nodes);
     },
     AliasUniquenessGuard::class => static function () use ($envInt): AliasUniquenessGuard {
         return new LocalAliasUniquenessGuard(

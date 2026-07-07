@@ -2,17 +2,21 @@ version: '3'
 
 tasks:
   fmt:
+    desc: distributed バックエンドの PHP コードを整形する
     cmds:
       - vendor/bin/php-cs-fixer fix
 
   fmt:diff:
+    desc: distributed バックエンドの PHP 整形差分を確認する
     cmds:
       - vendor/bin/php-cs-fixer fix --dry-run --diff --sequential
 
   phpstan:
+    desc: distributed バックエンドの静的解析を実行する
     cmds:
       - vendor/bin/phpstan analyse --debug
 
   test:
+    desc: distributed バックエンドのテストを実行する
     cmds:
       - vendor/bin/pest

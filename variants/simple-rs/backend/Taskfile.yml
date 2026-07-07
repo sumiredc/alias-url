@@ -2,17 +2,21 @@ version: '3'
 
 tasks:
   fmt:
+    desc: simple-rs バックエンドの Rust コードを整形する
     cmds:
       - cargo fmt
 
   fmt:diff:
+    desc: simple-rs バックエンドの Rust 整形差分を確認する
     cmds:
       - cargo fmt --check
 
   check:
+    desc: simple-rs バックエンドを cargo check で検証する
     cmds:
       - cargo check
 
   build:
+    desc: simple-rs バックエンドをリリースビルドする
     cmds:
       - cargo build --release

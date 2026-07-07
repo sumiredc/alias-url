@@ -1,6 +1,6 @@
 # distributed アーキテクチャ
 
-`distributed` は Redis shard を primary store にする構成です。
+`distributed` は Redis Cluster を primary store にする構成です。
 
 ## トポロジ
 
@@ -10,9 +10,9 @@ flowchart TB
     gateway[nginx gateway]
     api[backend<br/>FrankenPHP + Slim]
     redirect[backend-redirect<br/>FrankenPHP worker]
-    resolver[ConsistentHashShardResolver<br/>binary search]
+    cluster[RedisCluster client]
 
-    subgraph redis[Redis shards]
+    subgraph redis[Redis Cluster<br/>12 master nodes]
         r1[(redis-1)]
         r2[(redis-2)]
         r3[(...)]
@@ -22,34 +22,33 @@ flowchart TB
     client --> gateway
     gateway -- "POST /api/aliases<br/>GET /health" --> api
     gateway -- "GET /:alias" --> redirect
-    api --> resolver
-    redirect --> resolver
-    resolver --> r1
-    resolver --> r2
-    resolver --> r3
-    resolver --> r12
+    api --> cluster
+    redirect --> cluster
+    cluster --> r1
+    cluster --> r2
+    cluster --> r3
+    cluster --> r12
 ```
 
 ## シャーディング
 
 ```mermaid
 flowchart LR
-    alias[alias] --> h1[crc32 alias]
-    h1 --> search[lower_bound on sorted ring]
-    search --> node[virtual node]
-    node --> shard[Redis shard]
+    alias[alias] --> slot["CRC16(alias) % 16384"]
+    slot --> owner[hash slot owner]
+    owner --> node[Redis master node]
 ```
 
 | 項目 | 値 |
 | --- | --- |
-| shard 数 | 12 |
-| virtual nodes | 1024 / shard |
-| 探索 | sorted ring に対する binary search |
+| master node 数 | 12 |
+| hash slot 数 | 16,384 |
+| routing | Redis Cluster client |
 | Redis key | `{alias}` |
 | Redis value | `{url}` |
 | Redis クライアント | phpredis |
 
-Redis Cluster は使っていません。Redis Cluster の hash slot ではなく、アプリ側の consistent hash ring で shard を決めます。
+アプリは Redis Cluster client に key を渡します。client が hash slot を解決し、担当 master node へ routing します。
 
 ## 登録経路
 
@@ -59,8 +58,8 @@ sequenceDiagram
     participant G as Gateway
     participant B as backend
     participant F as Local Filter
-    participant R as Resolver
-    participant S as Redis Shard
+    participant RC as RedisCluster client
+    participant S as Redis Cluster
 
     C->>G: POST /api/aliases
     G->>B: request
@@ -69,9 +68,8 @@ sequenceDiagram
     alt local may exist
         B-->>C: 409
     else local not found
-        B->>R: resolve(alias)
-        R-->>B: shard
-        B->>S: SET alias url NX
+        B->>RC: SET alias url NX
+        RC->>S: route by hash slot
         alt created
             S-->>B: true
             B->>F: add(alias)
@@ -92,8 +90,8 @@ sequenceDiagram
     participant G as Gateway
     participant R as backend-redirect
     participant L as Local LRU
-    participant H as Resolver
-    participant S as Redis Shard
+    participant RC as RedisCluster client
+    participant S as Redis Cluster
 
     C->>G: GET /:alias
     G->>R: request
@@ -101,9 +99,8 @@ sequenceDiagram
     alt hit
         R-->>C: 302 Location
     else miss
-        R->>H: resolve(alias)
-        H-->>R: shard
-        R->>S: GET alias
+        R->>RC: GET alias
+        RC->>S: route by hash slot
         alt found
             S-->>R: URL
             R->>L: set(alias, URL)
@@ -158,13 +155,13 @@ cache は `backend-redirect` worker process ごとに独立します。
 flowchart TB
     subgraph createDirect[create direct]
         c1[k6] --> b1[backend:8080]
-        b1 --> rs1[Redis shards]
+        b1 --> rs1[Redis Cluster]
     end
 
     subgraph redirectDirect[redirect direct]
         seed[k6 seed] --> b2[backend:8081]
         bench[k6 redirect] --> r2[backend-redirect:8080]
-        b2 --> rs2[Redis shards]
+        b2 --> rs2[Redis Cluster]
         r2 --> rs2
     end
 ```

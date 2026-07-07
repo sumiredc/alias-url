@@ -6,7 +6,7 @@ namespace Alias\Distributed\Infrastructure\Persistence\Redis;
 
 use InvalidArgumentException;
 
-final readonly class RedisShard
+final readonly class RedisNode
 {
     public function __construct(
         public string $host,
@@ -19,13 +19,13 @@ final readonly class RedisShard
         $parts = explode(':', trim($address), 2);
 
         if (count($parts) !== 2 || $parts[0] === '') {
-            throw new InvalidArgumentException(sprintf('Invalid Redis shard address: %s', $address));
+            throw new InvalidArgumentException(sprintf('Invalid Redis node address: %s', $address));
         }
 
         $port = filter_var($parts[1], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
 
         if (!is_int($port)) {
-            throw new InvalidArgumentException(sprintf('Invalid Redis shard port: %s', $address));
+            throw new InvalidArgumentException(sprintf('Invalid Redis node port: %s', $address));
         }
 
         return new self($parts[0], $port);

@@ -3,8 +3,7 @@
 declare(strict_types=1);
 
 use Alias\Distributed\Infrastructure\Persistence\Redis\RedisClientProvider;
-use Alias\Distributed\Infrastructure\Persistence\Redis\RedisShard;
-use Alias\Distributed\Infrastructure\Strategy\Sharding\ConsistentHashShardResolver;
+use Alias\Distributed\Infrastructure\Persistence\Redis\RedisNode;
 use Dotenv\Dotenv;
 
 const DEFAULT_WORKER_MAX_REQUESTS = 100000;
@@ -15,18 +14,17 @@ require __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->safeLoad();
 
-$shards = array_map(
-    static fn (string $address): RedisShard => RedisShard::fromAddress($address),
-    explode(',', envString('REDIS_SHARDS', 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379')),
+$nodes = array_map(
+    static fn (string $address): RedisNode => RedisNode::fromAddress($address),
+    explode(',', envString('REDIS_CLUSTER_NODES', 'redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379,redis-7:6379,redis-8:6379,redis-9:6379,redis-10:6379,redis-11:6379,redis-12:6379')),
 );
 
-$shardResolver = new ConsistentHashShardResolver($shards);
-$clientProvider = new RedisClientProvider($shards);
+$clientProvider = new RedisClientProvider($nodes);
 $redirectCache = new RedirectCache(envInt('REDIRECT_CACHE_MAX_ENTRIES', DEFAULT_REDIRECT_CACHE_MAX_ENTRIES));
 $nbRequests = 0;
 $workerMaxRequests = workerMaxRequests();
 
-while (frankenphp_handle_request(function () use ($shardResolver, $clientProvider, $redirectCache, &$nbRequests): void {
+while (frankenphp_handle_request(function () use ($clientProvider, $redirectCache, &$nbRequests): void {
     $nbRequests++;
 
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -58,8 +56,7 @@ while (frankenphp_handle_request(function () use ($shardResolver, $clientProvide
         return;
     }
 
-    $shard = $shardResolver->resolve($alias);
-    $client = $clientProvider->clientFor($shard);
+    $client = $clientProvider->cluster();
     $payload = $client->get($alias);
 
     if (!is_string($payload) || $payload === '') {

@@ -4,42 +4,43 @@ declare(strict_types=1);
 
 namespace Alias\Distributed\Infrastructure\Persistence\Redis;
 
-use Redis;
+use RedisCluster;
 
 final class RedisClientProvider
 {
-    /**
-     * @var array<string, Redis>
-     */
-    private array $clients = [];
+    private ?RedisCluster $cluster = null;
 
     /**
-     * @param list<RedisShard> $shards
+     * @param list<RedisNode> $nodes
      */
     public function __construct(
-        private readonly array $shards,
+        private readonly array $nodes,
     ) {
     }
 
-    public function clientFor(RedisShard $shard): Redis
+    public function cluster(): RedisCluster
     {
-        $key = $shard->key();
-
-        if (!isset($this->clients[$key])) {
-            $client = new Redis();
-            $client->connect($shard->host, $shard->port);
-
-            $this->clients[$key] = $client;
+        if (!$this->cluster instanceof RedisCluster) {
+            $this->cluster = new RedisCluster(
+                null,
+                array_map(
+                    static fn (RedisNode $node): string => $node->key(),
+                    $this->nodes,
+                ),
+                2.0,
+                2.0,
+                false,
+            );
         }
 
-        return $this->clients[$key];
+        return $this->cluster;
     }
 
     /**
-     * @return list<RedisShard>
+     * @return list<RedisNode>
      */
-    public function shards(): array
+    public function nodes(): array
     {
-        return $this->shards;
+        return $this->nodes;
     }
 }

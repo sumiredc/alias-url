@@ -2,33 +2,36 @@ version: '3'
 
 tasks:
   up:
+    desc: distributed 構成を起動する
     cmds:
       - docker compose -f compose.yaml up -d --build
 
-  up:caddy:
-    cmds:
-      - docker compose -f compose.yaml -f compose.caddy.yaml up -d --build
-
   up:scaled:
+    desc: distributed 構成を指定レプリカ数で起動する
     cmds:
       - COMPOSE_PARALLEL_LIMIT=1 docker compose -f compose.yaml up -d --build --scale backend=${BACKEND_SCALE:-3} --scale backend-redirect=${BACKEND_REDIRECT_SCALE:-3}
 
   up:redirect:scaled:
+    desc: リダイレクト計測向けに distributed 構成を起動する
     cmds:
       - COMPOSE_PARALLEL_LIMIT=1 docker compose -f compose.yaml up -d --build --scale backend=${BACKEND_SCALE:-1} --scale backend-redirect=${BACKEND_REDIRECT_SCALE:-3}
 
   up:direct:
+    desc: distributed バックエンドをゲートウェイなしで起動する
     cmds:
-      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
+      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend redis-cluster-init redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
 
   up:redirect:direct:
+    desc: distributed のリダイレクト用バックエンドをゲートウェイなしで起動する
     cmds:
-      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
+      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect redis-cluster-init redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
 
   down:
+    desc: distributed 構成を停止し、ボリュームを削除する
     cmds:
       - docker compose -f compose.yaml down -v
 
   logs:
+    desc: distributed 構成のログを表示する
     cmds:
       - docker compose -f compose.yaml logs -f

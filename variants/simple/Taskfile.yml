@@ -2,25 +2,26 @@ version: '3'
 
 tasks:
   up:
+    desc: simple 構成を起動する
     cmds:
       - docker compose -f compose.yaml up -d --build
 
-  up:caddy:
-    cmds:
-      - docker compose -f compose.yaml -f compose.caddy.yaml up -d --build
-
   up:scaled:
+    desc: simple 構成をバックエンド 3 台で起動する
     cmds:
       - docker compose -f compose.yaml up -d --build --scale backend=3
 
   up:direct:
+    desc: simple バックエンドをゲートウェイなしで起動する
     cmds:
       - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend mysql
 
   down:
+    desc: simple 構成を停止し、ボリュームを削除する
     cmds:
       - docker compose -f compose.yaml down -v
 
   logs:
+    desc: simple 構成のログを表示する
     cmds:
       - docker compose -f compose.yaml logs -f

@@ -2,9 +2,11 @@ version: '3'
 
 tasks:
   dev:
+    desc: フロントエンドの開発サーバーを起動する
     cmds:
       - pnpm run dev
 
   build:
+    desc: フロントエンドをビルドする
     cmds:
       - pnpm run build

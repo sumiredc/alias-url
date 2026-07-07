@@ -76,7 +76,7 @@ BACKEND_SCALE * DB_MAX_CONNECTIONS
 例:
 
 ```bash
-DB_MAX_CONNECTIONS=32 BACKEND_SCALE=3 task bench:redirect:scaled:simple-rs:large
+DB_MAX_CONNECTIONS=32 BACKEND_SCALE=3 task bench:all:large:scaled
 ```
 
 ## スケーリング

@@ -1,6 +1,15 @@
 x-redis: &redis
   image: redis:8-alpine
-  command: ["redis-server", "--appendonly", "yes"]
+  command:
+    - redis-server
+    - --appendonly
+    - "yes"
+    - --cluster-enabled
+    - "yes"
+    - --cluster-config-file
+    - nodes.conf
+    - --cluster-node-timeout
+    - "5000"
   healthcheck:
     test: ["CMD", "redis-cli", "ping"]
     interval: 5s
@@ -34,30 +43,8 @@ services:
       LOCAL_BLOOM_FILTER_BITS: ${LOCAL_BLOOM_FILTER_BITS:-10000000}
       LOCAL_BLOOM_FILTER_HASHES: ${LOCAL_BLOOM_FILTER_HASHES:-7}
     depends_on:
-      redis-1:
-        condition: service_healthy
-      redis-2:
-        condition: service_healthy
-      redis-3:
-        condition: service_healthy
-      redis-4:
-        condition: service_healthy
-      redis-5:
-        condition: service_healthy
-      redis-6:
-        condition: service_healthy
-      redis-7:
-        condition: service_healthy
-      redis-8:
-        condition: service_healthy
-      redis-9:
-        condition: service_healthy
-      redis-10:
-        condition: service_healthy
-      redis-11:
-        condition: service_healthy
-      redis-12:
-        condition: service_healthy
+      redis-cluster-init:
+        condition: service_completed_successfully
 
   backend-redirect:
     build:
@@ -75,6 +62,12 @@ services:
       LOCAL_BLOOM_FILTER_BITS: ${LOCAL_BLOOM_FILTER_BITS:-10000000}
       LOCAL_BLOOM_FILTER_HASHES: ${LOCAL_BLOOM_FILTER_HASHES:-7}
       REDIRECT_CACHE_MAX_ENTRIES: ${REDIRECT_CACHE_MAX_ENTRIES:-0}
+    depends_on:
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  redis-cluster-init:
+    image: redis:8-alpine
     depends_on:
       redis-1:
         condition: service_healthy
@@ -100,6 +93,30 @@ services:
         condition: service_healthy
       redis-12:
         condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        if redis-cli -h redis-1 cluster info 2>/dev/null | grep -q 'cluster_state:ok'; then
+          exit 0
+        fi
+
+        yes yes | redis-cli --cluster create \
+          redis-1:6379 redis-2:6379 redis-3:6379 redis-4:6379 \
+          redis-5:6379 redis-6:6379 redis-7:6379 redis-8:6379 \
+          redis-9:6379 redis-10:6379 redis-11:6379 redis-12:6379 \
+          --cluster-replicas 0
+
+        for attempt in $$(seq 1 60); do
+          if redis-cli -h redis-1 cluster info 2>/dev/null | grep -q 'cluster_state:ok'; then
+            exit 0
+          fi
+
+          sleep 1
+        done
+
+        redis-cli -h redis-1 cluster info || true
+        exit 1
 
   redis-1:
     <<: *redis

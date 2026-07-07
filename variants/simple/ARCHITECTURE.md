@@ -2,7 +2,7 @@
 
 このドキュメントは、`simple` 構成のインフラ構成と設計方針を整理します。
 
-`simple` は短縮 URL サービスの基本構成です。Backend は Slim + FrankenPHP、保存先は MySQL です。分散 shard や local Bloom Filter は使わず、MySQL の `UNIQUE(alias)` 制約で alias の一意性を担保します。
+`simple` は短縮 URL サービスの基本構成です。Backend は Slim + FrankenPHP、保存先は MySQL です。Redis Cluster や local Bloom Filter は使わず、MySQL の `UNIQUE(alias)` 制約で alias の一意性を担保します。
 
 ## 目的
 
@@ -154,17 +154,7 @@ warmup-create
 create
 ```
 
-distributed の direct 構成とは役割が異なるため、direct 比較では scenario を揃えて比較します。
-
-```text
-create comparison:
-  simple-direct create-existing/create
-  distributed-direct create-existing/create
-
-redirect comparison:
-  simple-direct redirect
-  distributed-redirect-direct redirect
-```
+比較は `simple` / `simple-rs` / `distributed` の 3 構成で同じ scenario を実行します。
 
 ## distributed との差分
 
@@ -173,8 +163,8 @@ simple:
   gateway -> backend -> MySQL
 
 distributed:
-  gateway -> backend          -> Redis shards
-          -> backend-redirect -> Redis shards
+  gateway -> backend          -> Redis Cluster
+          -> backend-redirect -> Redis Cluster
 ```
 
-simple は構成が単純で一貫性を MySQL に寄せます。distributed は Redis shard と redirect 専用 Backend によって throughput と tail latency の改善を狙います。
+simple は構成が単純で一貫性を MySQL に寄せます。distributed は Redis Cluster と redirect 専用 Backend によって throughput と tail latency の改善を狙います。

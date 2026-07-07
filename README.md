@@ -16,7 +16,7 @@ flowchart TB
 
     gateway --> api[distributed backend<br/>PHP / Slim]
     gateway --> redirect[distributed backend-redirect<br/>PHP worker]
-    api --> redis[(Redis shards x12)]
+    api --> redis[(Redis Cluster x12 masters)]
     redirect --> redis
 ```
 
@@ -24,7 +24,7 @@ flowchart TB
 | --- | --- | --- | --- |
 | `simple` | FrankenPHP + Slim | MySQL | 基準実装 |
 | `simple-rs` | Rust + axum + sqlx | MySQL | 実装言語差分の比較 |
-| `distributed` | FrankenPHP + Slim / redirect worker | Redis shards | shard / redirect 分離の比較 |
+| `distributed` | FrankenPHP + Slim / redirect worker | Redis Cluster | Redis Cluster / redirect 分離の比較 |
 
 ## API
 
@@ -119,10 +119,10 @@ task bench:all:medium:scaled
 task bench:all:large:scaled
 ```
 
-redirect 比較:
+large scaled 比較:
 
 ```bash
-task bench:redirect:scaled:simple-rs:large
+task bench:all:large:scaled
 ```
 
 詳細:

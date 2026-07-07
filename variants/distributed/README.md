@@ -1,6 +1,6 @@
 # distributed
 
-Redis shard を使う分散構成です。登録系 backend と redirect 専用 backend を分けます。
+Redis Cluster を使う分散構成です。登録系 backend と redirect 専用 backend を分けます。
 
 ## 構成
 
@@ -10,25 +10,24 @@ flowchart LR
     gateway -- "/api/*, /health" --> backend[backend<br/>FrankenPHP + Slim]
     gateway -- "/:alias" --> redirect[backend-redirect<br/>FrankenPHP worker]
 
-    backend --> resolver[Consistent hash resolver]
-    redirect --> resolver
+    backend --> cluster[RedisCluster client]
+    redirect --> cluster
 
-    resolver --> r1[(redis-1)]
-    resolver --> r2[(redis-2)]
-    resolver --> r3[(...)]
-    resolver --> r12[(redis-12)]
+    cluster --> r1[(redis-1)]
+    cluster --> r2[(redis-2)]
+    cluster --> r3[(...)]
+    cluster --> r12[(redis-12)]
 ```
 
 ## データ
 
-Redis は 12 shard です。Redis Cluster は使わず、アプリ側で shard を決めます。
+Redis は 12 master node の Cluster です。アプリは key を渡し、Redis Cluster の hash slot に routing を任せます。
 
 ```mermaid
 flowchart LR
-    alias[alias] --> hash[crc32]
-    hash --> ring[consistent hash ring<br/>1024 virtual nodes / shard]
-    ring --> shard[Redis shard]
-    shard --> kv["key = alias<br/>value = URL"]
+    alias[alias] --> slot["CRC16(alias) % 16384"]
+    slot --> node[Redis Cluster master]
+    node --> kv["key = alias<br/>value = URL"]
 ```
 
 保存形式:
@@ -51,8 +50,8 @@ sequenceDiagram
     participant Gateway
     participant Backend
     participant Filter as Local exact/Bloom
-    participant Resolver
-    participant Redis
+    participant Cluster as RedisCluster client
+    participant Redis as Redis Cluster
 
     Client->>Gateway: POST /api/aliases
     Gateway->>Backend: forward
@@ -60,9 +59,8 @@ sequenceDiagram
     alt may exist
         Backend-->>Client: 409
     else not local
-        Backend->>Resolver: resolve(alias)
-        Resolver-->>Backend: shard
-        Backend->>Redis: SET alias url NX
+        Backend->>Cluster: SET alias url NX
+        Cluster->>Redis: route by hash slot
         Redis-->>Backend: OK or nil
         Backend->>Filter: add(alias)
         Backend-->>Client: 201 or 409
@@ -77,8 +75,8 @@ sequenceDiagram
     participant Gateway
     participant Redirect as backend-redirect
     participant Cache as Local LRU
-    participant Resolver
-    participant Redis
+    participant Cluster as RedisCluster client
+    participant Redis as Redis Cluster
 
     Client->>Gateway: GET /:alias
     Gateway->>Redirect: forward
@@ -86,9 +84,8 @@ sequenceDiagram
     alt cache hit
         Redirect-->>Client: 302
     else cache miss
-        Redirect->>Resolver: resolve(alias)
-        Resolver-->>Redirect: shard
-        Redirect->>Redis: GET alias
+        Redirect->>Cluster: GET alias
+        Cluster->>Redis: route by hash slot
         Redis-->>Redirect: URL or null
         Redirect->>Cache: set(alias, URL)
         Redirect-->>Client: 302 or 404
@@ -102,7 +99,7 @@ sequenceDiagram
 process-local な LRU cache です。デフォルトは無効です。
 
 ```bash
-REDIRECT_CACHE_MAX_ENTRIES=100000 task bench:redirect:scaled:simple-rs:large
+REDIRECT_CACHE_MAX_ENTRIES=100000 task bench:all:large:scaled
 ```
 
 | 変数 | 既定値 | 内容 |
@@ -119,8 +116,8 @@ task distributed:up:scaled
 task distributed:down
 task distributed:logs
 
-task bench:distributed
-task bench:distributed:scaled
-task bench:distributed:redirect:direct
-task bench:distributed:redirect:scaled
+task bench:all
+task bench:all:scaled
+task bench:all:medium
+task bench:all:large
 ```
