@@ -12,10 +12,10 @@ tasks:
   all:
     desc: simple / simple-rs / distributed の通常ベンチを実行して比較する
     cmds:
-      - task bench:simple
-      - task bench:simple-rs
-      - task bench:distributed
-      - task bench:compare:all
+      - task: simple
+      - task: simple-rs
+      - task: distributed
+      - task: compare:all
 
   all:medium:
     desc: medium データセットで通常ベンチを実行して比較する
@@ -36,10 +36,10 @@ tasks:
   all:scaled:
     desc: simple / simple-rs / distributed のスケール構成ベンチを実行して比較する
     cmds:
-      - task bench:simple:scaled
-      - task bench:simple-rs:scaled
-      - task bench:distributed:scaled
-      - task bench:compare:scaled:all
+      - task: simple:scaled
+      - task: simple-rs:scaled
+      - task: distributed:scaled
+      - task: compare:scaled:all
 
   all:medium:scaled:
     desc: medium データセットでスケール構成ベンチを実行して比較する
@@ -71,7 +71,7 @@ tasks:
     internal: true
     desc: simple の通常ベンチを実行する
     cmds:
-      - task bench:down
+      - task: down
       - task simple:up
       - node bench/scripts/run-benchmark-flow.mjs --variant simple --store mysql --variant-dir variants/simple
 
@@ -79,7 +79,7 @@ tasks:
     internal: true
     desc: simple のスケール構成ベンチを実行する
     cmds:
-      - task bench:down
+      - task: down
       - task simple:up:scaled
       - node bench/scripts/run-benchmark-flow.mjs --variant simple --result-variant simple-scaled --run-id-prefix simple-scaled --store mysql --variant-dir variants/simple
 
@@ -87,7 +87,7 @@ tasks:
     internal: true
     desc: simple-rs の通常ベンチを実行する
     cmds:
-      - task bench:down
+      - task: down
       - task simple-rs:up
       - node bench/scripts/run-benchmark-flow.mjs --variant simple-rs --store mysql --variant-dir variants/simple-rs
 
@@ -95,7 +95,7 @@ tasks:
     internal: true
     desc: simple-rs のスケール構成ベンチを実行する
     cmds:
-      - task bench:down
+      - task: down
       - task simple-rs:up:scaled
       - node bench/scripts/run-benchmark-flow.mjs --variant simple-rs --result-variant simple-rs-scaled --run-id-prefix simple-rs-scaled --store mysql --variant-dir variants/simple-rs
 
@@ -103,7 +103,7 @@ tasks:
     internal: true
     desc: distributed の通常ベンチを実行する
     cmds:
-      - task bench:down
+      - task: down
       - task distributed:up
       - node bench/scripts/run-benchmark-flow.mjs --variant distributed --store redis --variant-dir variants/distributed
 
@@ -111,6 +111,6 @@ tasks:
     internal: true
     desc: distributed のスケール構成ベンチを実行する
     cmds:
-      - task bench:down
+      - task: down
       - task distributed:up:scaled
       - node bench/scripts/run-benchmark-flow.mjs --variant distributed --result-variant distributed-scaled --run-id-prefix distributed-scaled --store redis --variant-dir variants/distributed
