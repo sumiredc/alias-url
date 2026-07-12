@@ -140,7 +140,7 @@ sequenceDiagram
 
 ## リダイレクト Cache
 
-process-local な LRU cache です。デフォルトは無効です。
+process-local な LRU cache です。デフォルトは 10,000 entries です。
 
 ```bash
 REDIRECT_CACHE_MAX_ENTRIES=100000 task bench:all:large:scaled
@@ -148,7 +148,7 @@ REDIRECT_CACHE_MAX_ENTRIES=100000 task bench:all:large:scaled
 
 | 変数 | 既定値 | 内容 |
 | --- | ---: | --- |
-| `REDIRECT_CACHE_MAX_ENTRIES` | `0` | 0 で無効。1 以上で FrankenPHP worker 内 cache を有効化 |
+| `REDIRECT_CACHE_MAX_ENTRIES` | `10000` | 0 で無効。1 以上で FrankenPHP worker 内 cache を有効化 |
 
 cache は replica / FrankenPHP worker ごとに独立し、worker 再起動で破棄されます。
 

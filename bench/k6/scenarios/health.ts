@@ -5,7 +5,7 @@ import { recordStatus } from '../lib/status-metrics.ts';
 
 const cfg = config({
   aliasPrefix: 'health',
-  vus: 20,
+  vus: 100,
   duration: '1m',
 });
 

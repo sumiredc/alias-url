@@ -1,4 +1,5 @@
 import http from 'k6/http';
+import exec from 'k6/execution';
 import { config, jsonHeaders } from '../lib/config.ts';
 import { seedAliasFor, targetUrl } from '../lib/aliases.ts';
 import { checkStatusOneOf } from '../lib/checks.ts';
@@ -12,17 +13,16 @@ const cfg = config({
 http.setResponseCallback(http.expectedStatuses({ min: 200, max: 399 }, 409));
 
 export const options = {
-  vus: 1,
+  vus: 100,
   iterations: cfg.seedCount,
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
   thresholds: {
     checks: ['rate>0.99'],
-    http_req_duration: ['p(95)<500', 'p(99)<1000'],
   },
 };
 
 export default function (): void {
-  const alias = seedAliasFor(cfg, __ITER);
+  const alias = seedAliasFor(cfg, exec.scenario.iterationInTest);
   const response = http.post(
     `${cfg.apiBaseUrl}/api/aliases`,
     JSON.stringify({

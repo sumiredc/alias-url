@@ -6,7 +6,7 @@ import { recordConflictReason, recordStatus } from '../lib/status-metrics.ts';
 
 const cfg = config({
   aliasPrefix: 'warmup-create',
-  vus: 5,
+  vus: 100,
   duration: '30s',
 });
 

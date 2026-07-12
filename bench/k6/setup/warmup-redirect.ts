@@ -6,7 +6,7 @@ import { recordStatus } from '../lib/status-metrics.ts';
 
 const cfg = config({
   aliasPrefix: 'bench',
-  vus: 5,
+  vus: 100,
   duration: '30s',
   seedCount: 1000,
 });
