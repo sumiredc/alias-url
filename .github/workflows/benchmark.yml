@@ -37,6 +37,12 @@ jobs:
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
 
+      - name: Prepare env files
+        run: |
+          cp variants/simple/backend/.env.example variants/simple/backend/.env
+          cp variants/simple-rs/backend/.env.example variants/simple-rs/backend/.env
+          cp variants/distributed/backend/.env.example variants/distributed/backend/.env
+
       - name: Run benchmark
         env:
           SEED_PROFILE: ${{ inputs.seed_profile }}
