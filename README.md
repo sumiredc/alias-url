@@ -90,6 +90,8 @@ task frontend:dev
 
 ## ベンチマーク
 
+![Latest benchmark](https://raw.githubusercontent.com/sumiredc/alias-url/gh-pages/bench/latest/summary.svg)
+
 ```mermaid
 flowchart LR
     task[task bench:*] --> seed[seed]

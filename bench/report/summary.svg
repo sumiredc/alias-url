@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="454" viewBox="0 0 860 454" role="img" aria-label="Alias URL benchmark">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+.title{font-size:24px;font-weight:700}
+.meta{font-size:12px;fill:#637083}
+.head{font-size:12px;font-weight:700;fill:#455166;text-transform:uppercase}
+.cell{font-size:14px}
+.num{font-variant-numeric:tabular-nums}
+.stripe{fill:#f7f9fc}
+.line{stroke:#d8dee9;stroke-width:1}
+</style>
+<rect width="100%" height="100%" rx="12" fill="#ffffff"/>
+<rect x="0" y="0" width="100%" height="62" rx="12" fill="#edf3ff"/>
+<text x="28" y="38" class="title">Alias URL benchmark</text>
+<text x="28" y="58" class="meta">generated at 2026-07-12T20:55:26Z / vus, reqs, rps, p99, failed</text>
+<line x1="20" x2="840" y1="74" y2="74" class="line"/>
+<text x="28" y="96" text-anchor="start" class="head">scenario</text>
+<text x="190" y="96" text-anchor="start" class="head">variant</text>
+<text x="460" y="96" text-anchor="end" class="head">vus</text>
+<text x="570" y="96" text-anchor="end" class="head">reqs</text>
+<text x="670" y="96" text-anchor="end" class="head">rps</text>
+<text x="765" y="96" text-anchor="end" class="head">p99</text>
+<text x="830" y="96" text-anchor="end" class="head">failed</text>
+<rect x="20" y="100" width="820" height="34" rx="6" class="stripe"/>
+<text x="28" y="122" text-anchor="start" class="cell">redirect</text>
+<text x="190" y="122" text-anchor="start" class="cell">simple-scaled</text>
+<text x="460" y="122" text-anchor="end" class="cell num">100</text>
+<text x="570" y="122" text-anchor="end" class="cell num">2,153,944</text>
+<text x="670" y="122" text-anchor="end" class="cell num">34471</text>
+<text x="765" y="122" text-anchor="end" class="cell num">5.62ms</text>
+<text x="830" y="122" text-anchor="end" class="cell num">0.000%</text>
+<text x="28" y="156" text-anchor="start" class="cell">redirect</text>
+<text x="190" y="156" text-anchor="start" class="cell">simple-rs-scaled</text>
+<text x="460" y="156" text-anchor="end" class="cell num">100</text>
+<text x="570" y="156" text-anchor="end" class="cell num">2,441,032</text>
+<text x="670" y="156" text-anchor="end" class="cell num">40595</text>
+<text x="765" y="156" text-anchor="end" class="cell num">4.07ms</text>
+<text x="830" y="156" text-anchor="end" class="cell num">0.000%</text>
+<rect x="20" y="168" width="820" height="34" rx="6" class="stripe"/>
+<text x="28" y="190" text-anchor="start" class="cell">redirect</text>
+<text x="190" y="190" text-anchor="start" class="cell">distributed-scaled</text>
+<text x="460" y="190" text-anchor="end" class="cell num">100</text>
+<text x="570" y="190" text-anchor="end" class="cell num">2,508,684</text>
+<text x="670" y="190" text-anchor="end" class="cell num">41673</text>
+<text x="765" y="190" text-anchor="end" class="cell num">4.00ms</text>
+<text x="830" y="190" text-anchor="end" class="cell num">0.000%</text>
+<text x="28" y="224" text-anchor="start" class="cell">create-existing</text>
+<text x="190" y="224" text-anchor="start" class="cell">simple-scaled</text>
+<text x="460" y="224" text-anchor="end" class="cell num">100</text>
+<text x="570" y="224" text-anchor="end" class="cell num">1,604,797</text>
+<text x="670" y="224" text-anchor="end" class="cell num">26480</text>
+<text x="765" y="224" text-anchor="end" class="cell num">9.54ms</text>
+<text x="830" y="224" text-anchor="end" class="cell num">0.000%</text>
+<rect x="20" y="236" width="820" height="34" rx="6" class="stripe"/>
+<text x="28" y="258" text-anchor="start" class="cell">create-existing</text>
+<text x="190" y="258" text-anchor="start" class="cell">simple-rs-scaled</text>
+<text x="460" y="258" text-anchor="end" class="cell num">100</text>
+<text x="570" y="258" text-anchor="end" class="cell num">2,238,115</text>
+<text x="670" y="258" text-anchor="end" class="cell num">37178</text>
+<text x="765" y="258" text-anchor="end" class="cell num">4.72ms</text>
+<text x="830" y="258" text-anchor="end" class="cell num">0.000%</text>
+<text x="28" y="292" text-anchor="start" class="cell">create-existing</text>
+<text x="190" y="292" text-anchor="start" class="cell">distributed-scaled</text>
+<text x="460" y="292" text-anchor="end" class="cell num">100</text>
+<text x="570" y="292" text-anchor="end" class="cell num">1,754,649</text>
+<text x="670" y="292" text-anchor="end" class="cell num">28963</text>
+<text x="765" y="292" text-anchor="end" class="cell num">7.91ms</text>
+<text x="830" y="292" text-anchor="end" class="cell num">0.000%</text>
+<rect x="20" y="304" width="820" height="34" rx="6" class="stripe"/>
+<text x="28" y="326" text-anchor="start" class="cell">create</text>
+<text x="190" y="326" text-anchor="start" class="cell">simple-scaled</text>
+<text x="460" y="326" text-anchor="end" class="cell num">100</text>
+<text x="570" y="326" text-anchor="end" class="cell num">163,459</text>
+<text x="670" y="326" text-anchor="end" class="cell num">2721</text>
+<text x="765" y="326" text-anchor="end" class="cell num">149.29ms</text>
+<text x="830" y="326" text-anchor="end" class="cell num">0.000%</text>
+<text x="28" y="360" text-anchor="start" class="cell">create</text>
+<text x="190" y="360" text-anchor="start" class="cell">simple-rs-scaled</text>
+<text x="460" y="360" text-anchor="end" class="cell num">100</text>
+<text x="570" y="360" text-anchor="end" class="cell num">764,677</text>
+<text x="670" y="360" text-anchor="end" class="cell num">12735</text>
+<text x="765" y="360" text-anchor="end" class="cell num">22.64ms</text>
+<text x="830" y="360" text-anchor="end" class="cell num">0.000%</text>
+<rect x="20" y="372" width="820" height="34" rx="6" class="stripe"/>
+<text x="28" y="394" text-anchor="start" class="cell">create</text>
+<text x="190" y="394" text-anchor="start" class="cell">distributed-scaled</text>
+<text x="460" y="394" text-anchor="end" class="cell num">100</text>
+<text x="570" y="394" text-anchor="end" class="cell num">1,214,914</text>
+<text x="670" y="394" text-anchor="end" class="cell num">20120</text>
+<text x="765" y="394" text-anchor="end" class="cell num">20.61ms</text>
+<text x="830" y="394" text-anchor="end" class="cell num">0.025%</text>
+<text x="28" y="438" class="meta">Source: k6 summary JSON in bench/results</text>
+</svg>

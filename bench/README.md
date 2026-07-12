@@ -107,6 +107,18 @@ task bench:compare:scaled:all
 
 出力には `rps`, `med`, `p95`, `p99`, `p99.9`, `max`, status counter, conflict reason を含みます。
 
+## GitHub Actions
+
+`Benchmark` workflow は手動実行です。実行後、`gh-pages` ブランチへ SVG レポートを配置します。
+
+README は以下を直接表示します。
+
+```text
+https://raw.githubusercontent.com/sumiredc/alias-url/gh-pages/bench/latest/summary.svg
+```
+
+GitHub hosted runner では `small` を推奨します。`medium` / `large` は self-hosted runner 向けです。
+
 ## 主な環境変数
 
 | 変数 | 既定値 | 用途 |
