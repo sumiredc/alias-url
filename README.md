@@ -90,7 +90,7 @@ task frontend:dev
 
 ## ベンチマーク
 
-![Latest benchmark](https://raw.githubusercontent.com/sumiredc/alias-url/gh-pages/bench/latest/summary.svg)
+![Latest benchmark](bench/report/summary.svg)
 
 ```mermaid
 flowchart LR

@@ -107,17 +107,20 @@ task bench:compare:scaled:all
 
 出力には `rps`, `med`, `p95`, `p99`, `p99.9`, `max`, status counter, conflict reason を含みます。
 
-## GitHub Actions
+## レポート画像
 
-`Benchmark` workflow は手動実行です。実行後、`gh-pages` ブランチへ SVG レポートを配置します。
+README に表示する SVG はローカルで生成して Git 管理します。
 
-README は以下を直接表示します。
+生成:
 
-```text
-https://raw.githubusercontent.com/sumiredc/alias-url/gh-pages/bench/latest/summary.svg
+```bash
+node bench/scripts/generate-report-svg.mjs \
+  --variants=simple-scaled,simple-rs-scaled,distributed-scaled \
+  --output=bench/report/summary.svg \
+  --title="Alias URL benchmark"
 ```
 
-GitHub hosted runner では `small` を推奨します。`medium` / `large` は self-hosted runner 向けです。
+README は `bench/report/summary.svg` を表示します。
 
 ## 主な環境変数
 
