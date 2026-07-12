@@ -14,7 +14,7 @@ tasks:
   phpstan:
     desc: distributed バックエンドの静的解析を実行する
     cmds:
-      - vendor/bin/phpstan analyse --debug
+      - vendor/bin/phpstan analyse --debug --memory-limit=512M
 
   test:
     desc: distributed バックエンドのテストを実行する

@@ -64,7 +64,7 @@ flowchart LR
 | 変数 | 既定値 | 備考 |
 | --- | --- | --- |
 | `DB_SSL_MODE` | `required` | `preferred` / `required` / `verify_ca` / `verify_identity` |
-| `DB_MAX_CONNECTIONS` | `64` | backend container ごとの上限 |
+| `DB_MAX_CONNECTIONS` | `32` | backend container ごとの上限 |
 | `DB_MIN_CONNECTIONS` | `min(4, max)` | 起動時に確保する接続数 |
 
 scaled 時の最大接続数:

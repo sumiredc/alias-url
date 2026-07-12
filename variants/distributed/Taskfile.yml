@@ -19,12 +19,12 @@ tasks:
   up:direct:
     desc: distributed バックエンドをゲートウェイなしで起動する
     cmds:
-      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend redis-cluster-init redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
+      - docker compose -f compose.yaml -f compose.direct.yaml up -d --build backend bloom-redis redis-cluster-init redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
 
   up:redirect:direct:
     desc: distributed のリダイレクト用バックエンドをゲートウェイなしで起動する
     cmds:
-      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect redis-cluster-init redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
+      - docker compose -f compose.yaml -f compose.redirect-direct.yaml up -d --build backend backend-redirect bloom-redis redis-cluster-init redis-1 redis-2 redis-3 redis-4 redis-5 redis-6 redis-7 redis-8 redis-9 redis-10 redis-11 redis-12
 
   down:
     desc: distributed 構成を停止し、ボリュームを削除する

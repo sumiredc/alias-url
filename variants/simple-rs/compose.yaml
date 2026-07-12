@@ -1,6 +1,6 @@
 services:
   gateway:
-    image: nginx:1.27-alpine
+    image: nginx:1.31.1-alpine
     ports:
       - "8080:80"
     volumes:
@@ -17,7 +17,7 @@ services:
         required: false
     environment:
       DB_SSL_MODE: ${DB_SSL_MODE:-required}
-      DB_MAX_CONNECTIONS: ${DB_MAX_CONNECTIONS:-64}
+      DB_MAX_CONNECTIONS: ${DB_MAX_CONNECTIONS:-32}
       DB_MIN_CONNECTIONS: ${DB_MIN_CONNECTIONS:-0}
     depends_on:
       mysql:

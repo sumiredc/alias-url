@@ -9,6 +9,7 @@
         worker {
             file /app/src/index.php
             match /*
+            num 3
         }
     }
 }

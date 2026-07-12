@@ -18,15 +18,23 @@ x-redis: &redis
     start_period: 5s
 
 services:
-  gateway:
-    image: nginx:1.27-alpine
+  gateway-redirect:
+    image: nginx:1.31.1-alpine
     ports:
       - "8080:80"
     volumes:
-      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/redirect.nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend-redirect
+
+  gateway-api:
+    image: nginx:1.31.1-alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - ./gateway/api.nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
-      - backend-redirect
 
   backend:
     build:
@@ -42,9 +50,18 @@ services:
       WORKER_MAX_REQUESTS: ${WORKER_MAX_REQUESTS:-100000}
       LOCAL_BLOOM_FILTER_BITS: ${LOCAL_BLOOM_FILTER_BITS:-10000000}
       LOCAL_BLOOM_FILTER_HASHES: ${LOCAL_BLOOM_FILTER_HASHES:-7}
+      BLOOM_PERSISTENCE_ENABLED: ${BLOOM_PERSISTENCE_ENABLED:-true}
+      BLOOM_REDIS_HOST: ${BLOOM_REDIS_HOST:-bloom-redis}
+      BLOOM_REDIS_PORT: ${BLOOM_REDIS_PORT:-6379}
+      BLOOM_REDIS_KEY_PREFIX: ${BLOOM_REDIS_KEY_PREFIX:-bloom:aliases}
+      BLOOM_FLUSH_EVERY_ADDS: ${BLOOM_FLUSH_EVERY_ADDS:-10000}
+      BLOOM_ROTATE_ESTIMATED_ITEMS: ${BLOOM_ROTATE_ESTIMATED_ITEMS:-250000}
+      BLOOM_OLD_GENERATION_TTL_SECONDS: ${BLOOM_OLD_GENERATION_TTL_SECONDS:-3600}
     depends_on:
       redis-cluster-init:
         condition: service_completed_successfully
+      bloom-redis:
+        condition: service_healthy
 
   backend-redirect:
     build:
@@ -117,6 +134,21 @@ services:
 
         redis-cli -h redis-1 cluster info || true
         exit 1
+
+  bloom-redis:
+    image: redis:8-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - bloom_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
 
   redis-1:
     <<: *redis
@@ -191,3 +223,4 @@ volumes:
   redis_10_data:
   redis_11_data:
   redis_12_data:
+  bloom_redis_data:

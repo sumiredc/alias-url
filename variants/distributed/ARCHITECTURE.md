@@ -7,10 +7,12 @@
 ```mermaid
 flowchart TB
     client[Client / k6 / Browser]
-    gateway[nginx gateway]
+    apiGateway[nginx api gateway<br/>:8081]
+    redirectGateway[nginx redirect gateway<br/>:8080]
     api[backend<br/>FrankenPHP + Slim]
     redirect[backend-redirect<br/>FrankenPHP worker]
     cluster[RedisCluster client]
+    bloom[(bloom-redis<br/>Bloom persistence)]
 
     subgraph redis[Redis Cluster<br/>12 master nodes]
         r1[(redis-1)]
@@ -19,10 +21,12 @@ flowchart TB
         r12[(redis-12)]
     end
 
-    client --> gateway
-    gateway -- "POST /api/aliases<br/>GET /health" --> api
-    gateway -- "GET /:alias" --> redirect
+    client --> apiGateway
+    client --> redirectGateway
+    apiGateway -- "POST /api/aliases<br/>GET /health" --> api
+    redirectGateway -- "GET /:alias" --> redirect
     api --> cluster
+    api --> bloom
     redirect --> cluster
     cluster --> r1
     cluster --> r2
@@ -55,7 +59,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant G as Gateway
+    participant G as API Gateway
     participant B as backend
     participant F as Local Filter
     participant RC as RedisCluster client
@@ -87,7 +91,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant G as Gateway
+    participant G as Redirect Gateway
     participant R as backend-redirect
     participant L as Local LRU
     participant RC as RedisCluster client
@@ -129,12 +133,25 @@ flowchart LR
 | 項目 | 内容 |
 | --- | --- |
 | 用途 | create / create-existing の Redis 到達削減 |
-| 所有 | backend worker process |
-| 共有 | しない |
-| 永続化 | 未実装 |
+| 所有 | backend FrankenPHP worker |
+| 共有 | bloom-redis 経由で current / previous generation を共有 |
+| 永続化 | 専用 Redis に binary bits + meta を保存 |
 | false positive | 許容する |
 
-永続化する場合は、専用 `redis-bloom` に定期 flush し、`BITOP OR` で merge する方針です。
+```mermaid
+flowchart LR
+    active[active_generation]
+    current["g:{N}:bits"]
+    previous["g:{N-1}:bits"]
+    old["g:{N-2}:bits"]
+
+    active --> current
+    current --> previous
+    previous --> old
+    old --> ttl[TTL 後に削除]
+```
+
+backend は起動時に `current` と `previous` を読み込みます。追加は `current` のみに行います。flush / rotate はレスポンス送信後に実行し、lock を取れた worker だけが `active_generation` を進めます。
 
 ## リダイレクト Cache
 
@@ -147,7 +164,7 @@ flowchart LR
     lru --> miss[miss: Redis GET]
 ```
 
-cache は `backend-redirect` worker process ごとに独立します。
+cache は `backend-redirect` の FrankenPHP worker ごとに独立します。
 
 ## Direct ベンチ
 

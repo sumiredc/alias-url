@@ -105,7 +105,7 @@ tasks:
     cmds:
       - task: down
       - task distributed:up
-      - node bench/scripts/run-benchmark-flow.mjs --variant distributed --store redis --variant-dir variants/distributed
+      - node bench/scripts/run-benchmark-flow.mjs --variant distributed --store redis --variant-dir variants/distributed --api-base-url "${API_BASE_URL:-http://localhost:8081}" --redirect-base-url "${REDIRECT_BASE_URL:-http://localhost:8080}"
 
   distributed:scaled:
     internal: true
@@ -113,4 +113,4 @@ tasks:
     cmds:
       - task: down
       - task distributed:up:scaled
-      - node bench/scripts/run-benchmark-flow.mjs --variant distributed --result-variant distributed-scaled --run-id-prefix distributed-scaled --store redis --variant-dir variants/distributed
+      - node bench/scripts/run-benchmark-flow.mjs --variant distributed --result-variant distributed-scaled --run-id-prefix distributed-scaled --store redis --variant-dir variants/distributed --api-base-url "${API_BASE_URL:-http://localhost:8081}" --redirect-base-url "${REDIRECT_BASE_URL:-http://localhost:8080}"

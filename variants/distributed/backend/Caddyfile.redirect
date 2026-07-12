@@ -9,6 +9,7 @@
         worker {
             file /app/src/redirect-index.php
             match /*
+            num 3
         }
     }
 }

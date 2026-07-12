@@ -28,7 +28,9 @@ while (frankenphp_handle_request(function () use ($clientProvider, $redirectCach
     $nbRequests++;
 
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $requestUri = is_string($requestUri) ? $requestUri : '/';
+    $path = parse_url($requestUri, PHP_URL_PATH);
     $path = is_string($path) ? $path : '/';
 
     if ($path === '/health') {
@@ -138,8 +140,6 @@ final class RedirectCache
 
         $oldestAlias = array_key_first($this->items);
 
-        if (is_string($oldestAlias)) {
-            unset($this->items[$oldestAlias]);
-        }
+        unset($this->items[$oldestAlias]);
     }
 }

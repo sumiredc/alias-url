@@ -39,7 +39,7 @@ API contract は `distributed` と同じにし、Backend 構成の違いを Fron
 
 ### Gateway
 
-nginx を Gateway として利用します。Caddy 構成もサブ比較用に残します。
+nginx を Gateway として利用します。
 
 simple では Backend が1種類だけなので、Gateway はすべてのリクエストを `backend` に転送します。
 

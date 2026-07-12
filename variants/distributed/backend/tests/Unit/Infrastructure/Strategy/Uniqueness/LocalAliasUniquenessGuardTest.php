@@ -12,6 +12,10 @@ it('keeps one character aliases in the exact set', function (): void {
 
     $guard->add('a');
 
+    expect($guard->mightContain('a'))->toBeFalse();
+
+    $guard->flushIfNeeded();
+
     expect($guard->mightContain('a'))->toBeTrue();
 });
 
@@ -21,6 +25,10 @@ it('keeps longer aliases in the bloom filter', function (): void {
     );
 
     $guard->add('ab');
+
+    expect($guard->mightContain('ab'))->toBeFalse();
+
+    $guard->flushIfNeeded();
 
     expect($guard->mightContain('ab'))->toBeTrue();
 });

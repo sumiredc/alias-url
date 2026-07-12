@@ -20,7 +20,7 @@ export const options = {
 };
 
 export default function (): void {
-  const response = http.get(`${cfg.baseUrl}/health`);
+  const response = http.get(`${cfg.apiBaseUrl}/health`);
 
   recordStatus(response);
   checkStatus(response, 200, 'health');

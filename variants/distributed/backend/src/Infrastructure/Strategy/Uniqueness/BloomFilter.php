@@ -8,6 +8,8 @@ final class BloomFilter
 {
     private const UINT32_SIZE = 4_294_967_296;
 
+    public const HASH_STRATEGY = 'crc32-double-v1';
+
     private string $bits;
 
     public function __construct(
@@ -40,19 +42,60 @@ final class BloomFilter
         return true;
     }
 
+    public function sizeBits(): int
+    {
+        return $this->sizeBits;
+    }
+
+    public function hashCount(): int
+    {
+        return $this->hashCount;
+    }
+
+    public function byteSize(): int
+    {
+        return strlen($this->bits);
+    }
+
+    public function exportBits(): string
+    {
+        return $this->bits;
+    }
+
+    public function importBits(string $bits): void
+    {
+        if (strlen($bits) !== $this->byteSize()) {
+            return;
+        }
+
+        $this->bits = $bits;
+    }
+
+    public function clear(): void
+    {
+        $this->bits = str_repeat("\0", $this->byteSize());
+    }
+
     /**
      * @return list<int>
      */
     private function positions(string $value): array
     {
         $positions = [];
+        $hash1 = $this->unsignedCrc32($value);
+        $hash2 = $this->unsignedCrc32('bloom:' . $value) | 1;
 
         for ($index = 0; $index < $this->hashCount; $index++) {
-            $hash = crc32($index . ':' . $value);
-            $unsignedHash = $hash < 0 ? $hash + self::UINT32_SIZE : $hash;
-            $positions[] = $unsignedHash % $this->sizeBits;
+            $positions[] = ($hash1 + ($index * $hash2)) % $this->sizeBits;
         }
 
         return $positions;
+    }
+
+    private function unsignedCrc32(string $value): int
+    {
+        $hash = crc32($value);
+
+        return $hash < 0 ? $hash + self::UINT32_SIZE : $hash;
     }
 }

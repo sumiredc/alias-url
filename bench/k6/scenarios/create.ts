@@ -23,7 +23,7 @@ export const options = {
 export default function (): void {
   const alias = uniqueAlias(cfg, 'create');
   const response = http.post(
-    `${cfg.baseUrl}/api/aliases`,
+    `${cfg.apiBaseUrl}/api/aliases`,
     JSON.stringify({
       alias,
       url: targetUrl(alias),

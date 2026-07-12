@@ -29,7 +29,7 @@ export default function (): void {
     : 0;
   const alias = aliasFor(cfg, 'conflict', key);
   const response = http.post(
-    `${cfg.baseUrl}/api/aliases`,
+    `${cfg.apiBaseUrl}/api/aliases`,
     JSON.stringify({
       alias,
       url: targetUrl(alias),

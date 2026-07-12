@@ -1,5 +1,7 @@
 export type BenchmarkConfig = {
   baseUrl: string;
+  apiBaseUrl: string;
+  redirectBaseUrl: string;
   vus: number;
   duration: string;
   runId: string;
@@ -16,9 +18,12 @@ const seedProfiles: Record<string, number> = {
 
 export function config(defaults: Partial<BenchmarkConfig> = {}): BenchmarkConfig {
   const resolvedSeedCount = seedCount(defaults.seedCount ?? 1000);
+  const baseUrl = trimTrailingSlash(envString('BASE_URL', defaults.baseUrl ?? 'http://localhost:8080'));
 
   return {
-    baseUrl: trimTrailingSlash(envString('BASE_URL', defaults.baseUrl ?? 'http://localhost:8080')),
+    baseUrl,
+    apiBaseUrl: trimTrailingSlash(envString('API_BASE_URL', defaults.apiBaseUrl ?? baseUrl)),
+    redirectBaseUrl: trimTrailingSlash(envString('REDIRECT_BASE_URL', defaults.redirectBaseUrl ?? baseUrl)),
     vus: envInt('VUS', defaults.vus ?? 20),
     duration: envString('DURATION', defaults.duration ?? '1m'),
     runId: sanitizeAliasPart(envString('RUN_ID', defaults.runId ?? 'local')),

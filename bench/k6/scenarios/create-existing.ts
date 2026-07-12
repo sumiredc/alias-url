@@ -26,7 +26,7 @@ export const options = {
 export default function (): void {
   const alias = seededAlias(cfg);
   const response = http.post(
-    `${cfg.baseUrl}/api/aliases`,
+    `${cfg.apiBaseUrl}/api/aliases`,
     JSON.stringify({
       alias,
       url: targetUrl(alias),

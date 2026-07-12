@@ -8,6 +8,7 @@ use Alias\Distributed\Infrastructure\Persistence\Redis\RedisAliasRepository;
 use Alias\Distributed\Infrastructure\Persistence\Redis\RedisClientProvider;
 use Alias\Distributed\Infrastructure\Persistence\Redis\RedisNode;
 use Alias\Distributed\Infrastructure\Strategy\Uniqueness\BloomFilter;
+use Alias\Distributed\Infrastructure\Strategy\Uniqueness\BloomFilterPersistence;
 use Alias\Distributed\Infrastructure\Strategy\Uniqueness\LocalAliasUniquenessGuard;
 use DI\ContainerBuilder;
 use Symfony\Component\Validator\Validation;
@@ -28,6 +29,16 @@ $envInt = static function (string $key, int $default): int {
     return is_int($intValue) ? $intValue : $default;
 };
 
+$envBool = static function (string $key, bool $default): bool {
+    $value = $_ENV[$key] ?? null;
+
+    if (!is_string($value) || $value === '') {
+        return $default;
+    }
+
+    return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
+};
+
 $builder->addDefinitions([
     'redis.nodes' => static function () use ($env): array {
         return array_map(
@@ -41,14 +52,29 @@ $builder->addDefinitions([
 
         return new RedisClientProvider($nodes);
     },
-    AliasUniquenessGuard::class => static function () use ($envInt): AliasUniquenessGuard {
+    LocalAliasUniquenessGuard::class => static function () use ($env, $envBool, $envInt): LocalAliasUniquenessGuard {
+        $persistence = null;
+
+        if ($envBool('BLOOM_PERSISTENCE_ENABLED', true)) {
+            $persistence = new BloomFilterPersistence(
+                host: $env('BLOOM_REDIS_HOST', 'bloom-redis'),
+                port: $envInt('BLOOM_REDIS_PORT', 6379),
+                keyPrefix: $env('BLOOM_REDIS_KEY_PREFIX', 'bloom:aliases'),
+                oldGenerationTtlSeconds: $envInt('BLOOM_OLD_GENERATION_TTL_SECONDS', 3600),
+            );
+        }
+
         return new LocalAliasUniquenessGuard(
             new BloomFilter(
                 sizeBits: $envInt('LOCAL_BLOOM_FILTER_BITS', 10_000_000),
                 hashCount: $envInt('LOCAL_BLOOM_FILTER_HASHES', 7),
-            )
+            ),
+            persistence: $persistence,
+            flushEveryAdds: $envInt('BLOOM_FLUSH_EVERY_ADDS', 10_000),
+            rotateEstimatedItems: $envInt('BLOOM_ROTATE_ESTIMATED_ITEMS', 1_000_000),
         );
     },
+    AliasUniquenessGuard::class => DI\get(LocalAliasUniquenessGuard::class),
     AliasRepository::class => DI\autowire(RedisAliasRepository::class),
     RedisAliasRepository::class => DI\autowire(),
     ValidatorInterface::class => static function (): ValidatorInterface {

@@ -19,6 +19,8 @@ const variantDir = stringArg('variant-dir');
 const resultVariant = stringArg('result-variant', variant);
 const runIdPrefix = stringArg('run-id-prefix', resultVariant);
 const baseUrl = stringArg('base-url', process.env.BASE_URL ?? 'http://localhost:8080');
+const apiBaseUrl = stringArg('api-base-url', process.env.API_BASE_URL ?? baseUrl);
+const redirectBaseUrl = stringArg('redirect-base-url', process.env.REDIRECT_BASE_URL ?? baseUrl);
 const runId = stringArg('run-id', process.env.RUN_ID ?? `${runIdPrefix}-${timestamp()}`);
 const resultDir = stringArg('result-dir', `bench/results/${resultVariant}/${runId}`);
 
@@ -27,8 +29,10 @@ await mkdir(resultDir, { recursive: true });
 console.log(`variant=${resultVariant}`);
 console.log(`run_id=${runId}`);
 console.log(`base_url=${baseUrl}`);
+console.log(`api_base_url=${apiBaseUrl}`);
+console.log(`redirect_base_url=${redirectBaseUrl}`);
 
-await waitForHealth(baseUrl);
+await waitForHealth(apiBaseUrl);
 
 await run(process.execPath, [
   'bench/scripts/run-seed.mjs',
@@ -37,7 +41,7 @@ await run(process.execPath, [
   '--variant-dir',
   variantDir,
   '--base-url',
-  baseUrl,
+  apiBaseUrl,
   '--result-dir',
   resultDir,
   '--run-id',
@@ -48,6 +52,8 @@ for (const [summaryName, script] of scenarios) {
   await run('k6', ['run', '--summary-export', `${resultDir}/${summaryName}.json`, script], {
     ...process.env,
     BASE_URL: baseUrl,
+    API_BASE_URL: apiBaseUrl,
+    REDIRECT_BASE_URL: redirectBaseUrl,
     RUN_ID: runId,
   });
 }

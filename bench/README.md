@@ -112,6 +112,8 @@ task bench:compare:scaled:all
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
 | `BASE_URL` | `http://localhost:8080` | k6 の接続先 |
+| `API_BASE_URL` | `BASE_URL` | create / seed / health の接続先 |
+| `REDIRECT_BASE_URL` | `BASE_URL` | redirect の接続先 |
 | `RUN_ID` | task ごと | 結果ディレクトリ・alias namespace |
 | `SEED_PROFILE` | `small` | `small` / `medium` / `large` |
 | `SEED_COUNT` | profile 依存 | seed 件数の上書き |
@@ -121,3 +123,7 @@ task bench:compare:scaled:all
 | `BACKEND_SCALE` | task 依存 | backend replica 数 |
 | `BACKEND_REDIRECT_SCALE` | task 依存 | redirect backend replica 数 |
 | `REDIRECT_CACHE_MAX_ENTRIES` | `0` | distributed redirect のローカル cache |
+| `LOCAL_BLOOM_FILTER_BITS` | `10000000` | distributed create の Bloom filter bit 数 |
+| `LOCAL_BLOOM_FILTER_HASHES` | `7` | distributed create の Bloom filter hash 数 |
+| `BLOOM_FLUSH_EVERY_ADDS` | `10000` | Bloom filter を bloom-redis へ OR flush する追加件数 |
+| `BLOOM_ROTATE_ESTIMATED_ITEMS` | `250000` | Bloom filter generation を進める推定件数 |

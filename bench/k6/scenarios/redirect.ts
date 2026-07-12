@@ -23,7 +23,7 @@ export const options = {
 
 export default function (): void {
   const alias = seededAlias(cfg);
-  const response = http.get(`${cfg.baseUrl}/${alias}`, {
+  const response = http.get(`${cfg.redirectBaseUrl}/${alias}`, {
     redirects: 0,
     tags: {
       name: 'GET /:alias',

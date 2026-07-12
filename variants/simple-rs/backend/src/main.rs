@@ -99,7 +99,7 @@ impl Config {
         let username = env_value("DB_USERNAME", "user");
         let password = env_value("DB_PASSWORD", "password");
 
-        let max_connections = env_value("DB_MAX_CONNECTIONS", "64").parse().unwrap_or(64);
+        let max_connections = env_value("DB_MAX_CONNECTIONS", "32").parse().unwrap_or(32);
         let min_connections = env_value("DB_MIN_CONNECTIONS", "0")
             .parse::<u32>()
             .unwrap_or(0)

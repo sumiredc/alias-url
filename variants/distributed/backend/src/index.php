@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Alias\Distributed\InterfaceAdapter\Http\Middleware\CorsMiddleware;
+use Alias\Distributed\Infrastructure\Strategy\Uniqueness\LocalAliasUniquenessGuard;
 use Dotenv\Dotenv;
 use Psr\Container\ContainerInterface;
 use Slim\Factory\AppFactory;
@@ -34,7 +35,7 @@ $app->add(new CorsMiddleware(corsAllowedOrigins()));
 $nbRequests = 0;
 $workerMaxRequests = workerMaxRequests();
 
-while (frankenphp_handle_request(function () use ($app, &$nbRequests) {
+while (frankenphp_handle_request(function () use ($app, $container, &$nbRequests) {
     $nbRequests++;
 
     $serverRequestCreator = ServerRequestCreatorFactory::create();
@@ -44,6 +45,12 @@ while (frankenphp_handle_request(function () use ($app, &$nbRequests) {
 
     $emitter = new ResponseEmitter();
     $emitter->emit($response);
+
+    $uniquenessGuard = $container->get(LocalAliasUniquenessGuard::class);
+
+    if ($uniquenessGuard instanceof LocalAliasUniquenessGuard) {
+        $uniquenessGuard->flushIfNeeded();
+    }
 })) {
     if ($nbRequests >= $workerMaxRequests) {
         break;
